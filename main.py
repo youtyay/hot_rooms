@@ -1,4 +1,5 @@
 import pygame
+import math
 
 
 WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 800, 800
@@ -70,11 +71,31 @@ class Hero(Person):
         self.color = color
         self.ammo = ammo
 
-    def shoot(self, start_pos, end_pos, screen):  # эта ебаная хуйня отказывается работать я не ебу почему пиздец
-        pygame.draw.line(screen, YELLOW, (start_pos[0] * TILE_SIZE, start_pos[1] * TILE_SIZE), end_pos, width=1)
-        pygame.draw.circle(screen, YELLOW, end_pos, TILE_SIZE // 2)
-        self.ammo -= 1
-        print('hero.shoot()', (start_pos[0] * TILE_SIZE, start_pos[1] * TILE_SIZE), end_pos)
+
+class Bullet:
+    def __init__(self, x, y):
+        self.pos = (x, y)
+        mx, my = pygame.mouse.get_pos()
+        self.dir = (mx - x, my - y)
+        length = math.hypot(*self.dir)
+        if length == 0.0:
+            self.dir = (0, -1)
+        else:
+            self.dir = (self.dir[0] / length, self.dir[1] / length)
+        angle = math.degrees(math.atan2(-self.dir[1], self.dir[0]))
+
+        self.bullet = pygame.Surface((10, 4)).convert_alpha()
+        self.bullet.fill((255, 255, 255))
+        self.bullet = pygame.transform.rotate(self.bullet, angle)
+        self.speed = 2
+
+    def update(self):
+        self.pos = (self.pos[0] + self.dir[0] * self.speed,
+                    self.pos[1] + self.dir[1] * self.speed)
+
+    def draw(self, surf):
+        bullet_rect = self.bullet.get_rect(center=self.pos)
+        surf.blit(self.bullet, bullet_rect)
 
 
 class Game:
@@ -121,19 +142,29 @@ def main():
 
     game = Game(map, hero)
 
+    bullets = []
+
     clock = pygame.time.Clock()
     running = True
     while running:
+        clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                hero.shoot(hero.get_pos(), pygame.mouse.get_pos(), screen)  # эта ебучая хуйня не работает я в тильте
+                pos = hero.get_pos()
+                bullets.append(Bullet(pos[0] * TILE_SIZE + TILE_SIZE // 2, pos[1] * TILE_SIZE + TILE_SIZE // 2))
+
+        for bullet in bullets[:]:
+            bullet.update()
+            if not screen.get_rect().collidepoint(bullet.pos):
+                bullets.remove(bullet)
         game.update_hero()
         screen.fill((0, 0, 0))
         game.render(screen)
+        for bullet in bullets:
+            bullet.draw(screen)
         pygame.display.flip()
-        clock.tick(FPS)
     pygame.quit()
 
 
