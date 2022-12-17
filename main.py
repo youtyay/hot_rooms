@@ -8,6 +8,7 @@ MAPS_DIR = 'maps'
 TILE_SIZE = 25
 BLACK, WHITE, RED = (0, 0, 0), (255, 255, 255), (255, 0, 0)
 GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
+bullets = []
 
 
 class Map:
@@ -62,14 +63,23 @@ class Person:
 
 
 class Hero(Person):
-    '''Класс Игрока, наследуется от Person. Имеет допольнительный атрибут ammo - количество патрон. Стрельба нахуй
-    не работает. У меня всё'''
+    '''Класс Игрока, наследуется от Person. Имеет допольнительный атрибут ammo - количество патрон / and smth more...'''
+
+    global bullets
 
     def __init__(self, pos, color, ammo):
         super().__init__(pos, color)
         self.pos = pos
         self.color = color
         self.ammo = ammo
+
+    def shoot(self):
+        if self.ammo > 0:
+            self.ammo -= 1
+            pos = self.get_pos()
+            bullets.append(Bullet(pos[0] * TILE_SIZE + TILE_SIZE // 2, pos[1] * TILE_SIZE + TILE_SIZE // 2))
+        elif self.ammo == 0:
+            print('No ammo')  # TODO: Сделать что-то с патронами
 
 
 class Bullet:
@@ -85,9 +95,9 @@ class Bullet:
         angle = math.degrees(math.atan2(-self.dir[1], self.dir[0]))
 
         self.bullet = pygame.Surface((10, 4)).convert_alpha()
-        self.bullet.fill((255, 255, 255))
+        self.bullet.fill(YELLOW)
         self.bullet = pygame.transform.rotate(self.bullet, angle)
-        self.speed = 2
+        self.speed = 20
 
     def update(self):
         self.pos = (self.pos[0] + self.dir[0] * self.speed,
@@ -96,6 +106,13 @@ class Bullet:
     def draw(self, surf):
         bullet_rect = self.bullet.get_rect(center=self.pos)
         surf.blit(self.bullet, bullet_rect)
+
+    def check_wall(self):
+        next_pos = (self.pos[0] + self.dir[0] * self.speed,
+                    self.pos[1] + self.dir[1] * self.speed)
+        if True:
+            pass  # TODO: Сделать проверку на препятствия и реакцию на них
+
 
 
 class Game:
@@ -121,13 +138,14 @@ class Game:
             next_y += 1
         if self.map.is_free((next_x, next_y)):  # Проверка на стену
             self.hero.set_pos((next_x, next_y))
-        if self.map.get_tile_id(self.hero.get_pos()) in self.map.trigger_tiles:  # если игрок активировал триггер карты
+        if self.map.get_tile_id(self.hero.get_pos()) in self.map.trigger_tiles:  # Если игрок активировал триггер карты
             triggger_id = self.map.get_tile_id(self.hero.get_pos())
             if triggger_id == 2:  # Смена карты
                 self.map.set_spawn_pos((9, 6))
                 self.change_map(self.map, 'second_map.txt', [0, 2, 3], [2, 3], self.map.spawn_pos)
 
     def change_map(self, map_object, map_filename, free_tiles, trigger_tiles, spawn_pos):
+        bullets.clear()
         map_object.__init__(map_filename, free_tiles, trigger_tiles, spawn_pos)
         self.hero.set_pos(spawn_pos)
 
@@ -142,8 +160,6 @@ def main():
 
     game = Game(map, hero)
 
-    bullets = []
-
     clock = pygame.time.Clock()
     running = True
     while running:
@@ -152,8 +168,7 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                pos = hero.get_pos()
-                bullets.append(Bullet(pos[0] * TILE_SIZE + TILE_SIZE // 2, pos[1] * TILE_SIZE + TILE_SIZE // 2))
+                hero.shoot()
 
         for bullet in bullets[:]:
             bullet.update()
