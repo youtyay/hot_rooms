@@ -19,3 +19,9 @@ def walls_tex():
 def player1_tex():
     texture = pygame.image.load("sprites/player1.png")
     return texture
+
+
+def player1_tex_mir():
+    texture = pygame.image.load("sprites/player1.png")
+    texture = pygame.transform.flip(texture, True, False)
+    return texture

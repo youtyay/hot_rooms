@@ -1,6 +1,6 @@
 import pygame
 import math
-from sprites.sprites_conf import player1_tex, test_tex, walls_tex, floor_tex
+from sprites.sprites_conf import player1_tex, test_tex, walls_tex, floor_tex, player1_tex_mir
 import maps.maps_dir
 
 
@@ -74,7 +74,10 @@ class Person:
 
     def render(self, screen):  # Отрисовка существа на холсте
         center = self.pixel_pox[0] + TILE_SIZE // 2, self.pixel_pox[1] + TILE_SIZE // 2
-        screen.blit(player1_tex(), self.pixel_pox)
+        if pygame.mouse.get_pos() > self.pixel_pox:
+            screen.blit(player1_tex(), self.pixel_pox)
+        else:
+            screen.blit(player1_tex_mir(), self.pixel_pox)
         pygame.draw.rect(screen, RED, self.hitbox, 1)
 
 
