@@ -53,16 +53,19 @@ class Person:
     def __init__(self, pos, color):
         self.x, self.y = pos
         self.color = color
+        self.hitbox = pygame.Rect(self.x * TILE_SIZE, self.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
     def get_pos(self):
         return self.x, self.y
 
     def set_pos(self, pos):
         self.x, self.y = pos[0], pos[1]
+        self.hitbox = pygame.Rect(self.x * TILE_SIZE, self.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
     def render(self, screen):  # Отрисовка существа на холсте
         center = self.x * TILE_SIZE + TILE_SIZE // 2, self.y * TILE_SIZE + TILE_SIZE // 2
         pygame.draw.circle(screen, self.color, center, TILE_SIZE // 2)
+        pygame.draw.rect(screen, RED, self.hitbox, 1)
 
 
 class Hero(Person):
