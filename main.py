@@ -1,5 +1,7 @@
 import pygame
 import math
+import sprites.sprites_conf
+import maps.maps_dir
 
 
 WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 800, 800
