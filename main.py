@@ -7,21 +7,30 @@ import maps.maps_dir
 WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 800, 800
 FPS = 30
 MAPS_DIR = 'maps'
+SPRITES_DIR = 'sprites'
 TILE_SIZE = 25
 BLACK, WHITE, RED = (0, 0, 0), (255, 255, 255), (255, 0, 0)
 GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
 bullets = []
 MOVE_SPEED = 4
+all_sprites = pygame.sprite.Group()
+colors = {0: BLACK, 1: GREEN, 2: BLUE, 3: RED, 4: WHITE}
+map_textures = {0: 'floor.png', 1: 'walls.png',  2: 'floor.png', 3: 'floor.png', 4: 'floor.png'}
+
 
 class Map:
     '''Класс Map создает карту из указанного текстового файла. Карта хранится в переменной self.map в виде матрицы
     Так-же в инициализатор передается список ID тайлов, по которым можно ходить и тайлы-триггеры.'''
 
-    def __init__(self, map_filename, free_tiles, trigger_tiles, spawn_pos):
+    def __init__(self, map_filename, free_tiles, trigger_tiles, spawn_pos, texture):
         self.map = []
         with open(f'{MAPS_DIR}/{map_filename}') as input_map:
             for line in input_map:
                 self.map.append(list(map(int, line.split())))
+        self.wall_texture = pygame.sprite.Sprite()
+        self.wall_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
+        self.wall_texture.rect = self.wall_texture.image.get_rect()
+        all_sprites.add(self.wall_texture)
         self.spawn_pos = spawn_pos
         self.height = len(self.map)
         self.width = len(self.map[0])
@@ -29,11 +38,15 @@ class Map:
         self.trigger_tiles = trigger_tiles
 
     def render(self, screen):  # Отрисовка карты на холсте
-        colors = {0: BLACK, 1: GREEN, 2: BLUE, 3: RED, 4: WHITE}
         for y in range(self.height):
             for x in range(self.width):
                 rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                screen.fill(colors[self.get_tile_id((x, y))], rect)
+                texture = pygame.sprite.Sprite()
+                texture.image = pygame.image.load(f'{SPRITES_DIR}/{map_textures[self.get_tile_id((x, y))]}')
+                # screen.fill(colors[self.get_tile_id((x, y))], rect)
+                screen.blit(texture.image, rect)
+                # rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                # pygame.draw.rect(screen, WHITE, rect, 1)
 
     def get_tile_id(self, pos):  # Возвращает ID тайла по координатам (x, y). Помогает понять его тип
         return self.map[pos[1]][pos[0]]
@@ -52,9 +65,13 @@ class Person:
     '''Класс Person создаёт сущностей на карте. При инициализации прописывается начальная точка появления
     и цвет (позже заменить на текстуру)'''
 
-    def __init__(self, pos, color):
+    def __init__(self, pos, color, texture):
+        self.person_texture = pygame.sprite.Sprite()
+        self.person_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
+        self.person_texture.rect = self.person_texture.image.get_rect()
+        all_sprites.add(self.person_texture)
         self.x, self.y = pos
-        self.pixel_pox = (pos[0] * TILE_SIZE, pos[1] * TILE_SIZE)
+        self.pixel_pos = (pos[0] * TILE_SIZE, pos[1] * TILE_SIZE)
         self.color = color
         self.hitbox = pygame.Rect(self.x * TILE_SIZE, self.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
@@ -63,18 +80,18 @@ class Person:
 
     def set_pos(self, pos):
         self.x, self.y = pos[0], pos[1]
-        self.hitbox = pygame.Rect(*self.pixel_pox, TILE_SIZE, TILE_SIZE)
+        self.hitbox = pygame.Rect(*self.pixel_pos, TILE_SIZE, TILE_SIZE)
 
     def set_pixel_pos(self, pixel_pos):
-        self.pixel_pox = pixel_pos
-        self.hitbox = pygame.Rect(*self.pixel_pox, TILE_SIZE, TILE_SIZE)
+        self.pixel_pos = pixel_pos
+        self.hitbox = pygame.Rect(*self.pixel_pos, TILE_SIZE, TILE_SIZE)
 
     def get_pixel_pos(self):
-        return self.pixel_pox
+        return self.pixel_pos
 
     def render(self, screen):  # Отрисовка существа на холсте
-        center = self.pixel_pox[0] + TILE_SIZE // 2, self.pixel_pox[1] + TILE_SIZE // 2
-        screen.blit(player1_tex(), self.pixel_pox)
+        center = self.pixel_pos[0] + TILE_SIZE // 2, self.pixel_pos[1] + TILE_SIZE // 2
+        screen.blit(self.person_texture.image, self.pixel_pos)
         pygame.draw.rect(screen, RED, self.hitbox, 1)
 
 
@@ -82,8 +99,12 @@ class Hero(Person):
     '''Класс Игрока, наследуется от Person. Имеет допольнительный атрибут ammo - количество патрон / and smth more...'''
     bullets = []
 
-    def __init__(self, pos, color, ammo):
-        super().__init__(pos, color)
+    def __init__(self, pos, color, texture, ammo):
+        super().__init__(pos, color, texture)
+        self.player1_texture = pygame.sprite.Sprite()
+        self.player1_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
+        self.player1_texture.rect = self.player1_texture.image.get_rect()
+        all_sprites.add(self.player1_texture)
         self.pos = pos
         self.color = color
         self.ammo = ammo
@@ -161,6 +182,15 @@ class Game:
     def update_hero(self):  # Передвижение Игрока
         next_x, next_y = self.hero.get_pos()
         next_pixel_x, next_pixel_y = self.hero.get_pixel_pos()
+        tile = (round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))
+        print(tile)
+
+        wall_tiles = []
+        for y in range(tile[1] - 1, tile[1] + 2):
+            for x in range(tile[0] - 1, tile[0] + 2):
+                if self.map.get_tile_id((x, y)) not in self.map.free_tiles:
+                    wall_tiles.append(pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+        print(wall_tiles)
         if pygame.key.get_pressed()[pygame.K_a] or pygame.key.get_pressed()[pygame.K_LEFT]:
             next_x -= 1
             next_pixel_x -= MOVE_SPEED
@@ -173,11 +203,11 @@ class Game:
         if pygame.key.get_pressed()[pygame.K_s] or pygame.key.get_pressed()[pygame.K_DOWN]:
             next_y += 1
             next_pixel_y += MOVE_SPEED
-        if self.map.is_free((round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))):  # Проверка на стену
-            print(self.map.is_free((round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))))
-            print(round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))
-            print((next_x, next_y))
-            self.hero.set_pixel_pos((next_pixel_x, next_pixel_y))
+        # if self.map.is_free():  # Проверка на стену
+        #     print(self.map.is_free((round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))))
+        #     print(round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))
+        #     print((next_x, next_y))
+        self.hero.set_pixel_pos((next_pixel_x, next_pixel_y))
         if self.map.get_tile_id(self.hero.get_pos()) in self.map.trigger_tiles:  # Если игрок активировал триггер карты
             triggger_id = self.map.get_tile_id(self.hero.get_pos())
             if triggger_id == 2:  # Смена карты
@@ -192,15 +222,14 @@ class Game:
 
 def main():
     pygame.init()
+    clock = pygame.time.Clock()
     screen = pygame.display.set_mode(WINDOW_SIZE)
-    pygame.display.set_caption('Hot Rooms')
 
-    map = Map('ex_map.txt', [0, 2, 3], [2, 3], (9, 11))
-    hero = Hero(map.spawn_pos, WHITE, 1000)
+    map = Map('ex_map.txt', [0, 2, 3], [2, 3], (9, 11), 'walls.png')
+    hero = Hero(map.spawn_pos, WHITE, 'player1.png', 1000)
 
     game = Game(map, hero)
 
-    clock = pygame.time.Clock()
     running = True
     while running:
         clock.tick(FPS)
@@ -213,6 +242,7 @@ def main():
         screen.fill((0, 0, 0))
         game.render(screen)
         pygame.display.flip()
+        pygame.display.set_caption('Hot Rooms ' + str(int(clock.get_fps())) + ' FPS')
     pygame.quit()
 
 
