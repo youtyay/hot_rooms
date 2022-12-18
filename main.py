@@ -1,6 +1,6 @@
 import pygame
 import math
-import sprites.sprites_conf
+from sprites.sprites_conf import player1_tex, test_tex, walls_tex, floor_tex
 import maps.maps_dir
 
 
@@ -12,7 +12,6 @@ BLACK, WHITE, RED = (0, 0, 0), (255, 255, 255), (255, 0, 0)
 GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
 bullets = []
 MOVE_SPEED = 4
-
 
 class Map:
     '''Класс Map создает карту из указанного текстового файла. Карта хранится в переменной self.map в виде матрицы
@@ -75,7 +74,7 @@ class Person:
 
     def render(self, screen):  # Отрисовка существа на холсте
         center = self.pixel_pox[0] + TILE_SIZE // 2, self.pixel_pox[1] + TILE_SIZE // 2
-        pygame.draw.circle(screen, self.color, center, TILE_SIZE // 2)
+        screen.blit(player1_tex(), self.pixel_pox)
         pygame.draw.rect(screen, RED, self.hitbox, 1)
 
 
