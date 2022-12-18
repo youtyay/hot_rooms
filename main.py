@@ -9,6 +9,7 @@ TILE_SIZE = 25
 BLACK, WHITE, RED = (0, 0, 0), (255, 255, 255), (255, 0, 0)
 GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
 bullets = []
+MOVE_SPEED = 4
 
 
 class Map:
@@ -33,8 +34,11 @@ class Map:
                 rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                 screen.fill(colors[self.get_tile_id((x, y))], rect)
 
-    def get_tile_id(self, pos):  # Получает ID тайла по координатам (x, y). Помогает понять его тип
+    def get_tile_id(self, pos):  # Возвращает ID тайла по координатам (x, y). Помогает понять его тип
         return self.map[pos[1]][pos[0]]
+
+    def get_tile_coords(self, pos):  # Возвращает пиксельные координаты тайла
+        return pos[0] * TILE_SIZE, pos[1] * TILE_SIZE
 
     def set_spawn_pos(self, pos):
         self.spawn_pos = pos
@@ -49,23 +53,33 @@ class Person:
 
     def __init__(self, pos, color):
         self.x, self.y = pos
+        self.pixel_pox = (pos[0] * TILE_SIZE, pos[1] * TILE_SIZE)
         self.color = color
+        self.hitbox = pygame.Rect(self.x * TILE_SIZE, self.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
     def get_pos(self):
-        return self.x, self.y
+        return round(self.x / TILE_SIZE), round(self.y / TILE_SIZE)
 
     def set_pos(self, pos):
         self.x, self.y = pos[0], pos[1]
+        self.hitbox = pygame.Rect(*self.pixel_pox, TILE_SIZE, TILE_SIZE)
+
+    def set_pixel_pos(self, pixel_pos):
+        self.pixel_pox = pixel_pos
+        self.hitbox = pygame.Rect(*self.pixel_pox, TILE_SIZE, TILE_SIZE)
+
+    def get_pixel_pos(self):
+        return self.pixel_pox
 
     def render(self, screen):  # Отрисовка существа на холсте
-        center = self.x * TILE_SIZE + TILE_SIZE // 2, self.y * TILE_SIZE + TILE_SIZE // 2
+        center = self.pixel_pox[0] + TILE_SIZE // 2, self.pixel_pox[1] + TILE_SIZE // 2
         pygame.draw.circle(screen, self.color, center, TILE_SIZE // 2)
+        pygame.draw.rect(screen, RED, self.hitbox, 1)
 
 
 class Hero(Person):
     '''Класс Игрока, наследуется от Person. Имеет допольнительный атрибут ammo - количество патрон / and smth more...'''
-
-    global bullets
+    bullets = []
 
     def __init__(self, pos, color, ammo):
         super().__init__(pos, color)
@@ -76,10 +90,16 @@ class Hero(Person):
     def shoot(self):
         if self.ammo > 0:
             self.ammo -= 1
-            pos = self.get_pos()
-            bullets.append(Bullet(pos[0] * TILE_SIZE + TILE_SIZE // 2, pos[1] * TILE_SIZE + TILE_SIZE // 2))
+            pos = self.get_pixel_pos()
+            bullets.append(Bullet(pos[0] + TILE_SIZE // 2, pos[1] + TILE_SIZE // 2))
         elif self.ammo == 0:
             print('No ammo')  # TODO: Сделать что-то с патронами
+
+    def update_bullets(self, screen):
+        for bullet in bullets[:]:
+            bullet.update()
+            if not screen.get_rect().collidepoint(bullet.pos):
+                bullets.remove(bullet)
 
 
 class Bullet:
@@ -99,6 +119,9 @@ class Bullet:
         self.bullet = pygame.transform.rotate(self.bullet, angle)
         self.speed = 20
 
+    def get_pos(self):
+        return self.pos
+
     def update(self):
         self.pos = (self.pos[0] + self.dir[0] * self.speed,
                     self.pos[1] + self.dir[1] * self.speed)
@@ -107,12 +130,9 @@ class Bullet:
         bullet_rect = self.bullet.get_rect(center=self.pos)
         surf.blit(self.bullet, bullet_rect)
 
-    def check_wall(self):
-        next_pos = (self.pos[0] + self.dir[0] * self.speed,
-                    self.pos[1] + self.dir[1] * self.speed)
-        if True:
-            pass  # TODO: Сделать проверку на препятствия и реакцию на них
-
+    def get_tile_pos(self, pos):
+        bullet_rect = self.bullet.get_rect(center=pos)
+        return bullet_rect[0] // TILE_SIZE, bullet_rect[1] // TILE_SIZE
 
 
 class Game:
@@ -125,19 +145,38 @@ class Game:
     def render(self, screen):  # Синхронизированная отрисовка
         self.map.render(screen)
         self.hero.render(screen)
+        self.hero.update_bullets(screen)
+        for bullet in bullets:
+            if self.check_wall(bullet):
+                bullet.draw(screen)
+            else:
+                bullets.remove(bullet)
+
+    def check_wall(self, bullet):
+        if self.map.get_tile_id(bullet.get_tile_pos(bullet.get_pos())) not in self.map.free_tiles:
+            return False
+        return True
 
     def update_hero(self):  # Передвижение Игрока
         next_x, next_y = self.hero.get_pos()
+        next_pixel_x, next_pixel_y = self.hero.get_pixel_pos()
         if pygame.key.get_pressed()[pygame.K_a] or pygame.key.get_pressed()[pygame.K_LEFT]:
             next_x -= 1
+            next_pixel_x -= MOVE_SPEED
         if pygame.key.get_pressed()[pygame.K_d] or pygame.key.get_pressed()[pygame.K_RIGHT]:
             next_x += 1
+            next_pixel_x += MOVE_SPEED
         if pygame.key.get_pressed()[pygame.K_w] or pygame.key.get_pressed()[pygame.K_UP]:
             next_y -= 1
+            next_pixel_y -= MOVE_SPEED
         if pygame.key.get_pressed()[pygame.K_s] or pygame.key.get_pressed()[pygame.K_DOWN]:
             next_y += 1
-        if self.map.is_free((next_x, next_y)):  # Проверка на стену
-            self.hero.set_pos((next_x, next_y))
+            next_pixel_y += MOVE_SPEED
+        if self.map.is_free((round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))):  # Проверка на стену
+            print(self.map.is_free((round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))))
+            print(round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))
+            print((next_x, next_y))
+            self.hero.set_pixel_pos((next_pixel_x, next_pixel_y))
         if self.map.get_tile_id(self.hero.get_pos()) in self.map.trigger_tiles:  # Если игрок активировал триггер карты
             triggger_id = self.map.get_tile_id(self.hero.get_pos())
             if triggger_id == 2:  # Смена карты
@@ -155,8 +194,8 @@ def main():
     screen = pygame.display.set_mode(WINDOW_SIZE)
     pygame.display.set_caption('Hot Rooms')
 
-    map = Map('ex_map.txt', [0, 2, 3], [2, 3], (3, 9))
-    hero = Hero(map.spawn_pos, WHITE, 10)
+    map = Map('ex_map.txt', [0, 2, 3], [2, 3], (9, 11))
+    hero = Hero(map.spawn_pos, WHITE, 1000)
 
     game = Game(map, hero)
 
@@ -169,16 +208,9 @@ def main():
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 hero.shoot()
-
-        for bullet in bullets[:]:
-            bullet.update()
-            if not screen.get_rect().collidepoint(bullet.pos):
-                bullets.remove(bullet)
         game.update_hero()
         screen.fill((0, 0, 0))
         game.render(screen)
-        for bullet in bullets:
-            bullet.draw(screen)
         pygame.display.flip()
     pygame.quit()
 
