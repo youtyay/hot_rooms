@@ -17,8 +17,8 @@ GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
 colors = {0: BLACK, 1: GREEN, 2: BLUE, 3: RED, 4: WHITE}
 
 map_textures = {0: 'floor.png', 1: 'walls.png',  2: 'floor.png', 3: 'floor.png', 4: 'floor.png'}
-textures = False
-hex = False
+textured = False
+hex = True
 
 all_sprites = pygame.sprite.Group()
 wall_sprites = pygame.sprite.Group()
@@ -43,7 +43,7 @@ class Map:
         for y in range(self.height):
             for x in range(self.width):
                 rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                if textures:
+                if textured:
                     texture = pygame.sprite.Sprite()
                     texture.image = pygame.image.load(f'{SPRITES_DIR}/{map_textures[self.get_tile_id((x, y))]}')
                     screen.blit(texture.image, rect)
@@ -82,7 +82,7 @@ class Person:
         self.hitbox = pygame.Rect(self.x * TILE_SIZE, self.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
     def get_pos(self):
-        return round(self.x / TILE_SIZE), round(self.y / TILE_SIZE)
+        return round(self.pixel_pos[0] / TILE_SIZE), round(self.pixel_pos[1] / TILE_SIZE)
 
     def set_pos(self, pos):
         self.x, self.y = pos[0], pos[1]
@@ -192,12 +192,21 @@ class Game:
         print(tile)
 
         wall_tiles = []
-        for y in range(tile[1] - 1, tile[1] + 2):
-            for x in range(tile[0] - 1, tile[0] + 2):
+        for y in range(tile[1] - 1, tile[1] + 2):  # TODO: В стену не анализировать несуществующие тайлы
+            for x in range(tile[0] - 1, tile[0] + 2):  # list index out of range
                 if self.map.get_tile_id((x, y)) not in self.map.free_tiles:
                     wall_tiles.append(pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
         print(wall_tiles)
         if pygame.key.get_pressed()[pygame.K_a] or pygame.key.get_pressed()[pygame.K_LEFT]:
+            # if textured:
+            #     if wall_tiles:
+            #         for wall_tile in wall_tiles:
+            #             if not self.hero.player1_texture.rect.colliderect(pygame.Rect(wall_tile[0] * TILE_SIZE,
+            #                                                                       wall_tile[1] * TILE_SIZE,
+            #                                                                       TILE_SIZE, TILE_SIZE)):
+            #                 next_pixel_x -= MOVE_SPEED
+            #     else:
+            #         next_pixel_x -= MOVE_SPEED
             next_x -= 1
             next_pixel_x -= MOVE_SPEED
         if pygame.key.get_pressed()[pygame.K_d] or pygame.key.get_pressed()[pygame.K_RIGHT]:
