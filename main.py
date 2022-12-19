@@ -9,28 +9,30 @@ FPS = 30
 MAPS_DIR = 'maps'
 SPRITES_DIR = 'sprites'
 TILE_SIZE = 25
-BLACK, WHITE, RED = (0, 0, 0), (255, 255, 255), (255, 0, 0)
-GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
 bullets = []
 MOVE_SPEED = 4
-all_sprites = pygame.sprite.Group()
+
+BLACK, WHITE, RED = (0, 0, 0), (255, 255, 255), (255, 0, 0)
+GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
 colors = {0: BLACK, 1: GREEN, 2: BLUE, 3: RED, 4: WHITE}
+
 map_textures = {0: 'floor.png', 1: 'walls.png',  2: 'floor.png', 3: 'floor.png', 4: 'floor.png'}
+textures = False
+hex = False
+
+all_sprites = pygame.sprite.Group()
+wall_sprites = pygame.sprite.Group()
 
 
 class Map:
     '''Класс Map создает карту из указанного текстового файла. Карта хранится в переменной self.map в виде матрицы
     Так-же в инициализатор передается список ID тайлов, по которым можно ходить и тайлы-триггеры.'''
 
-    def __init__(self, map_filename, free_tiles, trigger_tiles, spawn_pos, texture):
+    def __init__(self, map_filename, free_tiles, trigger_tiles, spawn_pos):
         self.map = []
         with open(f'{MAPS_DIR}/{map_filename}') as input_map:
             for line in input_map:
                 self.map.append(list(map(int, line.split())))
-        self.wall_texture = pygame.sprite.Sprite()
-        self.wall_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
-        self.wall_texture.rect = self.wall_texture.image.get_rect()
-        all_sprites.add(self.wall_texture)
         self.spawn_pos = spawn_pos
         self.height = len(self.map)
         self.width = len(self.map[0])
@@ -41,12 +43,16 @@ class Map:
         for y in range(self.height):
             for x in range(self.width):
                 rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                texture = pygame.sprite.Sprite()
-                texture.image = pygame.image.load(f'{SPRITES_DIR}/{map_textures[self.get_tile_id((x, y))]}')
-                # screen.fill(colors[self.get_tile_id((x, y))], rect)
-                screen.blit(texture.image, rect)
-                # rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                # pygame.draw.rect(screen, WHITE, rect, 1)
+                if textures:
+                    texture = pygame.sprite.Sprite()
+                    texture.image = pygame.image.load(f'{SPRITES_DIR}/{map_textures[self.get_tile_id((x, y))]}')
+                    screen.blit(texture.image, rect)
+                    all_sprites.add(texture)
+                else:
+                    screen.fill(colors[self.get_tile_id((x, y))], rect)
+                if hex:  # Белая сетка
+                    rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                    pygame.draw.rect(screen, WHITE, rect, 1)
 
     def get_tile_id(self, pos):  # Возвращает ID тайла по координатам (x, y). Помогает понять его тип
         return self.map[pos[1]][pos[0]]
@@ -225,7 +231,7 @@ def main():
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode(WINDOW_SIZE)
 
-    map = Map('ex_map.txt', [0, 2, 3], [2, 3], (9, 11), 'walls.png')
+    map = Map('ex_map.txt', [0, 2, 3], [2, 3], (9, 11))
     hero = Hero(map.spawn_pos, WHITE, 'player1.png', 1000)
 
     game = Game(map, hero)
@@ -241,6 +247,7 @@ def main():
         game.update_hero()
         screen.fill((0, 0, 0))
         game.render(screen)
+        pygame.display.set_caption(f'FPS: {int(clock.get_fps())}')
         pygame.display.flip()
         pygame.display.set_caption('Hot Rooms ' + str(int(clock.get_fps())) + ' FPS')
     pygame.quit()
