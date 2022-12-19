@@ -18,17 +18,19 @@ colors = {0: BLACK, 1: GREEN, 2: BLUE, 3: RED, 4: WHITE}
 
 map_textures = {0: 'floor.png', 1: 'walls.png',  2: 'floor.png', 3: 'floor.png', 4: 'floor.png'}
 textured = False
-hex = True
+hex = False
+player_hitbox = False
 
 all_sprites = pygame.sprite.Group()
 wall_sprites = pygame.sprite.Group()
 
 
-class Map:
+class Map(pygame.sprite.Sprite):
     '''Класс Map создает карту из указанного текстового файла. Карта хранится в переменной self.map в виде матрицы
     Так-же в инициализатор передается список ID тайлов, по которым можно ходить и тайлы-триггеры.'''
 
-    def __init__(self, map_filename, free_tiles, trigger_tiles, spawn_pos):
+    def __init__(self, map_filename, free_tiles, trigger_tiles, spawn_pos, group):
+        super().__init__(group)
         self.map = []
         with open(f'{MAPS_DIR}/{map_filename}') as input_map:
             for line in input_map:
@@ -55,7 +57,7 @@ class Map:
                     pygame.draw.rect(screen, WHITE, rect, 1)
 
     def get_tile_id(self, pos):  # Возвращает ID тайла по координатам (x, y). Помогает понять его тип
-        return self.map[pos[1]][pos[0]]
+       return self.map[pos[1]][pos[0]]
 
     def get_tile_coords(self, pos):  # Возвращает пиксельные координаты тайла
         return pos[0] * TILE_SIZE, pos[1] * TILE_SIZE
@@ -67,11 +69,12 @@ class Map:
         return self.get_tile_id(pos) in self.free_tiles
 
 
-class Person:
+class Person(pygame.sprite.Sprite):
     '''Класс Person создаёт сущностей на карте. При инициализации прописывается начальная точка появления
     и цвет (позже заменить на текстуру)'''
 
-    def __init__(self, pos, color, texture):
+    def __init__(self, pos, color, texture, group):
+        super().__init__(group)
         self.person_texture = pygame.sprite.Sprite()
         self.person_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
         self.person_texture.rect = self.person_texture.image.get_rect()
@@ -95,18 +98,22 @@ class Person:
     def get_pixel_pos(self):
         return self.pixel_pos
 
+    def get_rect(self):
+        return pygame.Rect(*self.pixel_pos, TILE_SIZE, TILE_SIZE)
+
     def render(self, screen):  # Отрисовка существа на холсте
         center = self.pixel_pos[0] + TILE_SIZE // 2, self.pixel_pos[1] + TILE_SIZE // 2
         screen.blit(self.person_texture.image, self.pixel_pos)
-        pygame.draw.rect(screen, RED, self.hitbox, 1)
+        if player_hitbox:
+            pygame.draw.rect(screen, RED, self.hitbox, 1)
 
 
 class Hero(Person):
     '''Класс Игрока, наследуется от Person. Имеет допольнительный атрибут ammo - количество патрон / and smth more...'''
     bullets = []
 
-    def __init__(self, pos, color, texture, ammo):
-        super().__init__(pos, color, texture)
+    def __init__(self, pos, color, texture, group, ammo):
+        super().__init__(pos, color, texture, group)
         self.player1_texture = pygame.sprite.Sprite()
         self.player1_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
         self.player1_texture.rect = self.player1_texture.image.get_rect()
@@ -163,7 +170,7 @@ class Bullet:
         return bullet_rect[0] // TILE_SIZE, bullet_rect[1] // TILE_SIZE
 
 
-class Game:
+class Game:  # TODO: Сделать Game главной группой спрайтов и переработать render()
     '''Класс Game управляет логикой и ходом игры. При инициализации получает объект карты и объекты существ.'''
 
     def __init__(self, map, hero):
@@ -171,7 +178,15 @@ class Game:
         self.hero = hero
 
     def render(self, screen):  # Синхронизированная отрисовка
+        rect = pygame.Rect(*screen.get_rect().center, 0, 0).inflate(100, 100)
+        rect2 = self.hero.get_rect()
+        print(rect2)
+        collide = rect.colliderect(rect2)
+        color = (255, 0, 0) if collide else (255, 255, 255)
+
+
         self.map.render(screen)
+        pygame.draw.rect(screen, color, rect)
         self.hero.render(screen)
         self.hero.update_bullets(screen)
         for bullet in bullets:
@@ -227,11 +242,11 @@ class Game:
             triggger_id = self.map.get_tile_id(self.hero.get_pos())
             if triggger_id == 2:  # Смена карты
                 self.map.set_spawn_pos((9, 6))
-                self.change_map(self.map, 'second_map.txt', [0, 2, 3], [2, 3], self.map.spawn_pos)
+                self.change_map(self.map, 'second_map.txt', [0, 2, 3], [2, 3], self.map.spawn_pos, all_sprites)
 
-    def change_map(self, map_object, map_filename, free_tiles, trigger_tiles, spawn_pos):
+    def change_map(self, map_object, map_filename, free_tiles, trigger_tiles, spawn_pos, group):
         bullets.clear()
-        map_object.__init__(map_filename, free_tiles, trigger_tiles, spawn_pos)
+        map_object.__init__(map_filename, free_tiles, trigger_tiles, spawn_pos, group)
         self.hero.set_pos(spawn_pos)
 
 
@@ -240,8 +255,8 @@ def main():
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode(WINDOW_SIZE)
 
-    map = Map('ex_map.txt', [0, 2, 3], [2, 3], (9, 11))
-    hero = Hero(map.spawn_pos, WHITE, 'player1.png', 1000)
+    map = Map('ex_map.txt', [0, 2, 3], [2, 3], (9, 11), all_sprites)
+    hero = Hero(map.spawn_pos, WHITE, 'player1.png', all_sprites, 1000)
 
     game = Game(map, hero)
 
