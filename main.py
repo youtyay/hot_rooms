@@ -50,6 +50,7 @@ class Map(pygame.sprite.Sprite):
                     texture.image = pygame.image.load(f'{SPRITES_DIR}/{map_textures[self.get_tile_id((x, y))]}')
                     screen.blit(texture.image, rect)
                     all_sprites.add(texture)
+                    self.map_mask = pygame.mask.from_surface(texture)
                 else:
                     screen.fill(colors[self.get_tile_id((x, y))], rect)
                 if hex:  # Белая сетка
@@ -264,7 +265,6 @@ def main():
         game.update_hero(screen)
         screen.fill((0, 0, 0))
         game.render(screen)
-        pygame.display.set_caption(f'FPS: {int(clock.get_fps())}')
         pygame.display.flip()
         pygame.display.set_caption('Hot Rooms ' + str(int(clock.get_fps())) + ' FPS')
     pygame.quit()
