@@ -39,15 +39,6 @@ class Map(pygame.sprite.Group):
             for x in range(self.width):
                 image = self.map.get_tile_image(x, y, 0)
                 screen.blit(image, (x * TILE_SIZE, y * TILE_SIZE))
-                # rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                # if textured:
-                #     texture = pygame.sprite.Sprite()
-                #     texture.image = pygame.image.load(f'{SPRITES_DIR}/{map_textures[self.get_tile_id((x, y))]}')
-                #     screen.blit(texture.image, rect)
-                #     all_sprites_group.add(texture)
-                #     self.map_mask = pygame.mask.from_surface(texture.image)
-                # else:
-                #     screen.fill(colors[self.get_tile_id((x, y))], rect)
                 if hex:  # Белая сетка
                     rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                     pygame.draw.rect(screen, WHITE, rect, 1)
@@ -67,9 +58,9 @@ class Map(pygame.sprite.Group):
 
 class Person(pygame.sprite.Sprite):
     '''Класс Person создаёт сущностей на карте. При инициализации прописывается начальная точка появления
-    и цвет (позже заменить на текстуру)'''
+    и текстуру'''
 
-    def __init__(self, pos, color, texture, group):
+    def __init__(self, pos, texture, group):
         super().__init__(group)
         self.person_texture = pygame.sprite.Sprite()
         self.person_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
@@ -77,7 +68,6 @@ class Person(pygame.sprite.Sprite):
         all_sprites_group.add(self.person_texture)
         self.x, self.y = pos
         self.pixel_pos = (pos[0] * TILE_SIZE, pos[1] * TILE_SIZE)
-        self.color = color
         self.hitbox = pygame.Rect(self.x * TILE_SIZE, self.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
     def get_pos(self):
@@ -103,19 +93,31 @@ class Person(pygame.sprite.Sprite):
             pygame.draw.rect(screen, RED, self.hitbox, 1)
 
 
+class Enemy(Person):
+
+    def __init__(self, pos, texture, group):
+        super().__init__(pos, texture, group)
+        self.enemy_texture = pygame.sprite.Sprite
+        self.enemy_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
+        self.enemy_texture.rect = self.enemy_texture.image.get_rect()
+        self.pos = pos
+
+    def function(self):
+        pass
+
+
 class Hero(Person):
     '''Класс Игрока, наследуется от Person. Имеет допольнительный атрибут ammo - количество патрон / and smth more...'''
-    bullets = []
 
-    def __init__(self, pos, color, texture, group, ammo):
-        super().__init__(pos, color, texture, group)
+    def __init__(self, pos, texture, group, ammo):
+        super().__init__(pos, texture, group)
         self.player1_texture = pygame.sprite.Sprite()
         self.player1_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
         self.player1_texture.rect = self.player1_texture.image.get_rect()
         all_sprites_group.add(self.player1_texture)
         self.pos = pos
-        self.color = color
         self.ammo = ammo
+        self.aiming = False
 
     def shoot(self):
         if self.ammo > 0:
@@ -124,6 +126,9 @@ class Hero(Person):
             bullets.append(Bullet(pos[0] + TILE_SIZE // 2, pos[1] + TILE_SIZE // 2))
         elif self.ammo == 0:
             print('No ammo')  # TODO: Сделать что-то с патронами
+
+    def aim(self):
+        self.aiming = not self.aiming
 
     def update_bullets(self, screen):
         for bullet in bullets[:]:
@@ -165,7 +170,7 @@ class Bullet:
         return bullet_rect[0] // TILE_SIZE, bullet_rect[1] // TILE_SIZE
 
 
-class Game:  # TODO: Сделать Game главной группой спрайтов и переработать render()
+class Game:
     '''Класс Game управляет логикой и ходом игры. При инициализации получает объект карты и объекты существ.'''
 
     def __init__(self, map, hero):
@@ -234,7 +239,7 @@ def main():
     screen = pygame.display.set_mode(WINDOW_SIZE)
 
     map = Map('map1.tmx', [0, 2, 3], [2], (1, 1), all_sprites_group)
-    hero = Hero(map.spawn_pos, WHITE, 'player1.png', all_sprites_group, 1000)
+    hero = Hero(map.spawn_pos, 'player1.png', all_sprites_group, 1000)
 
     game = Game(map, hero)
 
@@ -245,10 +250,15 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                hero.shoot()
+                if event.button == 1:
+                    hero.shoot()
+                if event.button == 3:
+                    hero.aim()
         game.update_hero()
         screen.fill((0, 0, 0))
         game.render(screen)
+        if hero.aiming:
+            pygame.draw.line(screen, pygame.Color(0, 255, 0), hero.get_rect().center, pygame.mouse.get_pos(), 1)
         pygame.display.flip()
         pygame.display.set_caption('Hot Rooms ' + str(int(clock.get_fps())) + ' FPS')
     pygame.quit()
