@@ -1,7 +1,6 @@
 import pygame
 import math
-from sprites.sprites_conf import player1_tex, test_tex, walls_tex, floor_tex
-import maps.maps_dir
+import pytmx
 
 
 WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 800, 800
@@ -19,46 +18,46 @@ colors = {0: BLACK, 1: GREEN, 2: BLUE, 3: RED, 4: WHITE}
 map_textures = {0: 'floor.png', 1: 'walls.png',  2: 'floor.png', 3: 'floor.png', 4: 'floor.png'}
 textured = False
 hex = False
-player_hitbox_viev = False
+person_hitbox_view = False
 
-all_sprites = pygame.sprite.Group()
-wall_sprites = pygame.sprite.Group()
+all_sprites_group = pygame.sprite.Group()
+map_sprites_group = pygame.sprite.Group()
+persons_sprites_group = pygame.sprite.Group()
 
 
-class Map(pygame.sprite.Sprite):
+class Map(pygame.sprite.Group):
     '''Класс Map создает карту из указанного текстового файла. Карта хранится в переменной self.map в виде матрицы
     Так-же в инициализатор передается список ID тайлов, по которым можно ходить и тайлы-триггеры.'''
 
     def __init__(self, map_filename, free_tiles, trigger_tiles, spawn_pos, group):
         super().__init__(group)
-        self.map = []
-        with open(f'{MAPS_DIR}/{map_filename}') as input_map:
-            for line in input_map:
-                self.map.append(list(map(int, line.split())))
+        self.map = pytmx.load_pygame(f'{MAPS_DIR}/{map_filename}')
         self.spawn_pos = spawn_pos
-        self.height = len(self.map)
-        self.width = len(self.map[0])
+        self.height = self.map.height
+        self.width = self.map.width
         self.free_tiles = free_tiles
         self.trigger_tiles = trigger_tiles
 
     def render(self, screen):  # Отрисовка карты на холсте
         for y in range(self.height):
             for x in range(self.width):
-                rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                if textured:
-                    texture = pygame.sprite.Sprite()
-                    texture.image = pygame.image.load(f'{SPRITES_DIR}/{map_textures[self.get_tile_id((x, y))]}')
-                    screen.blit(texture.image, rect)
-                    all_sprites.add(texture)
-                    self.map_mask = pygame.mask.from_surface(texture)
-                else:
-                    screen.fill(colors[self.get_tile_id((x, y))], rect)
+                image = self.map.get_tile_image(x, y, 0)
+                screen.blit(image, (x * TILE_SIZE, y * TILE_SIZE))
+                # rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                # if textured:
+                #     texture = pygame.sprite.Sprite()
+                #     texture.image = pygame.image.load(f'{SPRITES_DIR}/{map_textures[self.get_tile_id((x, y))]}')
+                #     screen.blit(texture.image, rect)
+                #     all_sprites_group.add(texture)
+                #     self.map_mask = pygame.mask.from_surface(texture.image)
+                # else:
+                #     screen.fill(colors[self.get_tile_id((x, y))], rect)
                 if hex:  # Белая сетка
                     rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                     pygame.draw.rect(screen, WHITE, rect, 1)
 
     def get_tile_id(self, pos):  # Возвращает ID тайла по координатам (x, y). Помогает понять его тип
-       return self.map[pos[1]][pos[0]]
+        return self.map.tiledgidmap[self.map.get_tile_gid(*pos, 0)] - 1
 
     def get_tile_coords(self, pos):  # Возвращает пиксельные координаты тайла
         return pos[0] * TILE_SIZE, pos[1] * TILE_SIZE
@@ -79,7 +78,7 @@ class Person(pygame.sprite.Sprite):
         self.person_texture = pygame.sprite.Sprite()
         self.person_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
         self.person_texture.rect = self.person_texture.image.get_rect()
-        all_sprites.add(self.person_texture)
+        all_sprites_group.add(self.person_texture)
         self.x, self.y = pos
         self.pixel_pos = (pos[0] * TILE_SIZE, pos[1] * TILE_SIZE)
         self.color = color
@@ -104,7 +103,7 @@ class Person(pygame.sprite.Sprite):
 
     def render(self, screen):  # Отрисовка существа на холсте
         screen.blit(self.person_texture.image, self.pixel_pos)
-        if player_hitbox_viev:  # Hitbox существа
+        if person_hitbox_view:  # Hitbox существа
             pygame.draw.rect(screen, RED, self.hitbox, 1)
 
 
@@ -117,7 +116,7 @@ class Hero(Person):
         self.player1_texture = pygame.sprite.Sprite()
         self.player1_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
         self.player1_texture.rect = self.player1_texture.image.get_rect()
-        all_sprites.add(self.player1_texture)
+        all_sprites_group.add(self.player1_texture)
         self.pos = pos
         self.color = color
         self.ammo = ammo
@@ -179,7 +178,6 @@ class Game:  # TODO: Сделать Game главной группой спра�
 
     def render(self, screen):  # Синхронизированная отрисовка
         self.map.render(screen)
-        self.check_wall_for_player(screen)
         self.hero.render(screen)
         self.hero.update_bullets(screen)
         for bullet in bullets:
@@ -193,33 +191,27 @@ class Game:  # TODO: Сделать Game главной группой спра�
             return False
         return True
 
-    def check_wall_for_player(self, screen):
-        next_pixel_x, next_pixel_y = self.hero.get_pixel_pos()
+    def check_wall_for_player(self, next_pixel_x, next_pixel_y):
         tile = (round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))
         player_hitbox_rect = self.hero.get_rect()
-        for y in range(tile[1] - 1, tile[1] + 2):  # TODO: В стену не анализировать несуществующие тайлы
-            for x in range(tile[0] - 1, tile[0] + 2):  # list index out of range
+        for y in range(tile[1] - 1, tile[1] + 2):
+            for x in range(tile[0] - 1, tile[0] + 2):
                 if self.map.get_tile_id((x, y)) not in self.map.free_tiles:
                     wall_tile = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                     if wall_tile.colliderect(player_hitbox_rect):
-                        color = (255, 0, 0)
-                    else:
-                        color = (255, 255, 255)
-                    pygame.draw.rect(screen, color, wall_tile)
+                        if wall_tile.collidepoint(player_hitbox_rect.midleft):
+                            next_pixel_x += MOVE_SPEED
+                        if wall_tile.collidepoint(player_hitbox_rect.midright):
+                            next_pixel_x -= MOVE_SPEED
+                        if wall_tile.collidepoint(player_hitbox_rect.midtop):
+                            next_pixel_y += MOVE_SPEED
+                        if wall_tile.collidepoint(player_hitbox_rect.midbottom):
+                            next_pixel_y -= MOVE_SPEED
+        return next_pixel_x, next_pixel_y
 
-    def update_hero(self, screen):  # Передвижение Игрока
+    def update_hero(self):  # Передвижение Игрока
         next_pixel_x, next_pixel_y = self.hero.get_pixel_pos()
-
         if pygame.key.get_pressed()[pygame.K_a] or pygame.key.get_pressed()[pygame.K_LEFT]:
-            # if textured:
-            #     if wall_tiles:
-            #         for wall_tile in wall_tiles:
-            #             if not self.hero.player1_texture.rect.colliderect(pygame.Rect(wall_tile[0] * TILE_SIZE,
-            #                                                                       wall_tile[1] * TILE_SIZE,
-            #                                                                       TILE_SIZE, TILE_SIZE)):
-            #                 next_pixel_x -= MOVE_SPEED
-            #     else:
-            #         next_pixel_x -= MOVE_SPEED
             next_pixel_x -= MOVE_SPEED
         if pygame.key.get_pressed()[pygame.K_d] or pygame.key.get_pressed()[pygame.K_RIGHT]:
             next_pixel_x += MOVE_SPEED
@@ -227,16 +219,12 @@ class Game:  # TODO: Сделать Game главной группой спра�
             next_pixel_y -= MOVE_SPEED
         if pygame.key.get_pressed()[pygame.K_s] or pygame.key.get_pressed()[pygame.K_DOWN]:
             next_pixel_y += MOVE_SPEED
-        # if self.map.is_free():  # Проверка на стену
-        #     print(self.map.is_free((round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))))
-        #     print(round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))
-        #     print((next_x, next_y))
-        self.hero.set_pixel_pos((next_pixel_x, next_pixel_y))
+        self.hero.set_pixel_pos(self.check_wall_for_player(next_pixel_x, next_pixel_y))
         if self.map.get_tile_id(self.hero.get_pos()) in self.map.trigger_tiles:  # Если игрок активировал триггер карты
             triggger_id = self.map.get_tile_id(self.hero.get_pos())
             if triggger_id == 2:  # Смена карты
                 self.map.set_spawn_pos((9, 6))
-                self.change_map(self.map, 'second_map.txt', [0, 2, 3], [2, 3], self.map.spawn_pos, all_sprites)
+                self.change_map(self.map, 'second_map.txt', [0, 2, 3], [2, 3], self.map.spawn_pos, all_sprites_group)
 
     def change_map(self, map_object, map_filename, free_tiles, trigger_tiles, spawn_pos, group):
         bullets.clear()
@@ -249,8 +237,8 @@ def main():
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode(WINDOW_SIZE)
 
-    map = Map('ex_map.txt', [0, 2, 3], [2, 3], (9, 11), all_sprites)
-    hero = Hero(map.spawn_pos, WHITE, 'player1.png', all_sprites, 1000)
+    map = Map('map1.tmx', [0, 2, 3], [2], (1, 1), all_sprites_group)
+    hero = Hero(map.spawn_pos, WHITE, 'player1.png', all_sprites_group, 1000)
 
     game = Game(map, hero)
 
@@ -262,7 +250,7 @@ def main():
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 hero.shoot()
-        game.update_hero(screen)
+        game.update_hero()
         screen.fill((0, 0, 0))
         game.render(screen)
         pygame.display.flip()
