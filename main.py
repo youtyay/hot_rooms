@@ -3,7 +3,7 @@ import math
 import pytmx
 
 
-WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 800, 800
+WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 0, 0
 FPS = 30
 MAPS_DIR = 'maps'
 SPRITES_DIR = 'sprites'
@@ -225,7 +225,7 @@ class Game:
             triggger_id = self.map.get_tile_id(self.hero.get_pos())
             if triggger_id == 2:  # Смена карты
                 self.map.set_spawn_pos((9, 6))
-                self.change_map(self.map, 'second_map.txt', [0, 2, 3], [2, 3], self.map.spawn_pos, all_sprites_group)
+                self.change_map(self.map, 'map2.tmx', [0, 2, 3], [2, 3], self.map.spawn_pos, all_sprites_group)
 
     def change_map(self, map_object, map_filename, free_tiles, trigger_tiles, spawn_pos, group):
         bullets.clear()
@@ -236,9 +236,9 @@ class Game:
 def main():
     pygame.init()
     clock = pygame.time.Clock()
-    screen = pygame.display.set_mode(WINDOW_SIZE)
+    screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
 
-    map = Map('map1.tmx', [0, 2, 3], [2], (1, 1), all_sprites_group)
+    map = Map('map3.tmx', [0, 2, 3], [2], (1, 1), all_sprites_group)
     hero = Hero(map.spawn_pos, 'player1.png', all_sprites_group, 1000)
 
     game = Game(map, hero)
