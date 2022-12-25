@@ -13,15 +13,11 @@ MOVE_SPEED = 5
 
 BLACK, WHITE, RED = (0, 0, 0), (255, 255, 255), (255, 0, 0)
 GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
-colors = {0: BLACK, 1: GREEN, 2: BLUE, 3: RED, 4: WHITE}
 
-map_textures = {0: 'floor.png', 1: 'walls.png',  2: 'floor.png', 3: 'floor.png', 4: 'floor.png'}
-textured = False
 hex = False
 person_hitbox_view = False
 
 all_sprites_group = pygame.sprite.Group()
-map_sprites_group = pygame.sprite.Group()
 persons_sprites_group = pygame.sprite.Group()
 
 

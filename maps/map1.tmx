@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="25" tileheight="25" infinite="0" nextlayerid="2" nextobjectid="1">
- <tileset firstgid="1" source="hot_rooms_prealfa.tsx"/>
+ <tileset firstgid="1" source="../../../OneDrive/Рабочий стол/hot_rooms_prealfa.tsx"/>
  <layer id="1" name="Слой тайлов 1" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJzVlMEOwCAIQ53z/795ly1ZFkALVdyBg0ZTaR/WUkpNruNV33W791rnnKdG9JG9572Z+lZJHkr6VVhLe9n+I0x5+bPevqr/bH0vf5rP3qxQ/npnWBz/QX/UfxZTUmZI/j0WtHdHuJTuozqMuYiwZfm84v9DeJrhv4dVKxu2flO0PP17C/EfzZ/h/275azPFyII9/2z/d9afzT/yb0b61+bf0tjBf0YWWfydg/mv0M+sC+sqBWM=
