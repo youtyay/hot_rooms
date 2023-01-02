@@ -5,9 +5,11 @@ import pytmx
 
 WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 0, 0
 FPS = 30
+map_number = 1
 MAPS_DIR = 'maps'
 SPRITES_DIR = 'sprites'
 TILE_SIZE = 25
+ENEMY_EVENT_TYPE = 30
 bullets = []
 MOVE_SPEED = 5
 
@@ -55,10 +57,35 @@ class Map(pygame.sprite.Group):
     def is_free(self, pos):  # Проверка на проходимость тайла
         return self.get_tile_id(pos) in self.free_tiles
 
+    def find_path_step(self, start, target):
+        INF = 1000
+        x, y = start
+        distance = [[INF] * self.width for _ in range(self.height)]
+        distance[y][x] = 0
+        prev = [[None] * self.width for _ in range(self.height)]
+        queue = [(x, y)]
+        while queue:
+            x, y = queue.pop(0)
+            for dx, dy in (0, 1), (1, 0), (-1, 0), (0, -1):
+                next_x, next_y = x + dx, y + dy
+                if 0 < next_x < self.width and 0 < next_y < self.height and \
+                        self.is_free((next_x, next_y)) and distance[next_y][next_x] == INF:
+                    distance[next_y][next_x] = distance[y][x] + 1
+                    prev[next_y][next_x] = (x, y)
+                    queue.append((next_x, next_y))
+        x, y = target
+        if distance[y][x] == INF or start == target:
+            return start
+        while prev[y][x] != start:
+            x, y = prev[y][x]
+        return x, y
+
 
 class Person(pygame.sprite.Sprite):
-    '''Класс Person создаёт сущностей на карте. При инициализации прописывается начальная точка появления
-    и текстуру'''
+    '''
+    Класс Person создаёт сущностей на карте. При инициализации прописывается начальная точка появления
+    и текстуру
+    '''
 
     def __init__(self, pos, texture, group):
         super().__init__(group)
@@ -75,6 +102,7 @@ class Person(pygame.sprite.Sprite):
 
     def set_pos(self, pos):
         self.x, self.y = pos[0], pos[1]
+        self.set_pixel_pos((self.x * TILE_SIZE, self.y * TILE_SIZE))
         self.hitbox = pygame.Rect(*self.pixel_pos, TILE_SIZE, TILE_SIZE)
 
     def set_pixel_pos(self, pixel_pos):
@@ -101,13 +129,14 @@ class Enemy(Person):
         self.enemy_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
         self.enemy_texture.rect = self.enemy_texture.image.get_rect()
         self.pos = pos
-
-    def function(self):
-        pass
+        self.delay = 100
+        pygame.time.set_timer(ENEMY_EVENT_TYPE, self.delay)
 
 
 class Hero(Person):
-    '''Класс Игрока, наследуется от Person. Имеет допольнительный атрибут ammo - количество патрон / and smth more...'''
+    '''
+    Класс Игрока, наследуется от Person. Имеет допольнительный атрибут ammo - количество патрон / and smth more...
+    '''
 
     def __init__(self, pos, texture, group, ammo):
         super().__init__(pos, texture, group)
@@ -173,13 +202,15 @@ class Bullet:
 class Game:
     '''Класс Game управляет логикой и ходом игры. При инициализации получает объект карты и объекты существ.'''
 
-    def __init__(self, map, hero):
+    def __init__(self, map, hero, enemy):
         self.map = map
         self.hero = hero
+        self.enemy = enemy
 
     def render(self, screen):  # Синхронизированная отрисовка
         self.map.render(screen)
         self.hero.render(screen)
+        self.enemy.render(screen)
         self.hero.update_bullets(screen)
         for bullet in bullets:
             if self.check_wall_for_bullet(bullet):
@@ -211,6 +242,7 @@ class Game:
         return next_pixel_x, next_pixel_y
 
     def update_hero(self):  # Передвижение Игрока
+        global map_number
         next_pixel_x, next_pixel_y = self.hero.get_pixel_pos()
         if pygame.key.get_pressed()[pygame.K_a] or pygame.key.get_pressed()[pygame.K_LEFT]:
             next_pixel_x -= MOVE_SPEED
@@ -224,8 +256,14 @@ class Game:
         if self.map.get_tile_id(self.hero.get_pos()) in self.map.trigger_tiles:  # Если игрок активировал триггер карты
             triggger_id = self.map.get_tile_id(self.hero.get_pos())
             if triggger_id == 2:  # Смена карты
+                map_number += 1
                 self.map.set_spawn_pos((9, 6))
-                self.change_map(self.map, 'map2.tmx', [0, 2, 3], [2, 3], self.map.spawn_pos, all_sprites_group)
+                self.change_map(self.map, f'map{map_number}.tmx', [0, 2, 3], [2, 3], self.map.spawn_pos,
+                                all_sprites_group)
+
+    def move_enemy(self):
+        next_position = self.map.find_path_step(self.enemy.get_pos(), self.hero.get_pos())
+        self.enemy.set_pos(next_position)
 
     def change_map(self, map_object, map_filename, free_tiles, trigger_tiles, spawn_pos, group):
         bullets.clear()
@@ -238,10 +276,11 @@ def main():
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
 
-    map = Map('map3.tmx', [0, 2, 3], [2], (1, 1), all_sprites_group)
+    map = Map(f'map{map_number}.tmx', [0, 2, 3], [2], (1, 1), all_sprites_group)
     hero = Hero(map.spawn_pos, 'player1.png', all_sprites_group, 1000)
+    enemy1 = Enemy((30, 31), 'enemy_tex.png', all_sprites_group)
 
-    game = Game(map, hero)
+    game = Game(map, hero, enemy1)
 
     running = True
     while running:
@@ -254,6 +293,8 @@ def main():
                     hero.shoot()
                 if event.button == 3:
                     hero.aim()
+            if event.type == ENEMY_EVENT_TYPE:
+                game.move_enemy()
         game.update_hero()
         screen.fill((0, 0, 0))
         game.render(screen)
