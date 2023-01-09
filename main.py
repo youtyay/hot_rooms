@@ -17,7 +17,7 @@ BLACK, WHITE, RED = (0, 0, 0), (255, 255, 255), (255, 0, 0)
 GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
 
 hex = False
-person_hitbox_view = False
+person_hitbox_view = True
 
 all_sprites_group = pygame.sprite.Group()
 persons_sprites_group = pygame.sprite.Group()
@@ -130,7 +130,7 @@ class Enemy(Person):
         self.enemy_texture.rect = self.enemy_texture.image.get_rect()
         persons_sprites_group.add(self)
         self.pos = pos
-        self.delay = 100
+        self.delay = 200
         pygame.time.set_timer(ENEMY_EVENT_TYPE, self.delay)
 
 
@@ -265,8 +265,30 @@ class Game:
                                 all_sprites_group)
 
     def move_enemy(self):
-        next_position = self.map.find_path_step(self.enemy.get_pos(), self.hero.get_pos())
-        self.enemy.set_pos(next_position)
+        enemy_pos = self.enemy.get_pos()
+        enemy_pixel_pos = list(self.enemy.get_pixel_pos())
+        next_pos = self.map.find_path_step(enemy_pos, self.hero.get_pos())
+        direction = 'stay'
+        if next_pos[0] > enemy_pos[0]:
+            direction = 'right'
+        elif next_pos[0] < enemy_pos[0]:
+            direction = 'left'
+        elif next_pos[1] > enemy_pos[1]:
+            direction = 'down'
+        elif next_pos[1] < enemy_pos[1]:
+            direction = 'up'
+        print(direction)
+        dt = 1
+        for i in range(25):
+            if direction == 'right':
+                enemy_pixel_pos[0] += dt
+            elif direction == 'left':
+                enemy_pixel_pos[0] -= dt
+            elif direction == 'down':
+                enemy_pixel_pos[1] += dt
+            elif direction == 'up':
+                enemy_pixel_pos[1] -= dt
+            self.enemy.set_pixel_pos(enemy_pixel_pos)
 
     def change_map(self, map_object, map_filename, free_tiles, trigger_tiles, spawn_pos, group):
         bullets.clear()
@@ -282,7 +304,7 @@ def main():
 
     map = Map(f'map{map_number}.tmx', [0, 2, 3], [2], (1, 1), all_sprites_group)
     hero = Hero(map.spawn_pos, 'player1.png', all_sprites_group, 1000)
-    enemy1 = Enemy((30, 31), 'enemy_tex.png', all_sprites_group)
+    enemy1 = Enemy((30, 30), 'enemy_tex.png', all_sprites_group)
 
     game = Game(map, hero, enemy1)
 
