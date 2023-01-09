@@ -82,10 +82,10 @@ class Map(pygame.sprite.Group):
 
 
 class Person(pygame.sprite.Sprite):
-    '''
+    """
     Класс Person создаёт сущностей на карте. При инициализации прописывается начальная точка появления
     и текстуру
-    '''
+    """
 
     def __init__(self, pos, texture, group):
         super().__init__(group)
@@ -128,15 +128,16 @@ class Enemy(Person):
         self.enemy_texture = pygame.sprite.Sprite
         self.enemy_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
         self.enemy_texture.rect = self.enemy_texture.image.get_rect()
+        persons_sprites_group.add(self)
         self.pos = pos
         self.delay = 100
         pygame.time.set_timer(ENEMY_EVENT_TYPE, self.delay)
 
 
 class Hero(Person):
-    '''
+    """
     Класс Игрока, наследуется от Person. Имеет допольнительный атрибут ammo - количество патрон / and smth more...
-    '''
+    """
 
     def __init__(self, pos, texture, group, ammo):
         super().__init__(pos, texture, group)
@@ -190,9 +191,9 @@ class Bullet:
         self.pos = (self.pos[0] + self.dir[0] * self.speed,
                     self.pos[1] + self.dir[1] * self.speed)
 
-    def draw(self, surf):
+    def draw(self, screen):
         bullet_rect = self.bullet.get_rect(center=self.pos)
-        surf.blit(self.bullet, bullet_rect)
+        screen.blit(self.bullet, bullet_rect)
 
     def get_tile_pos(self, pos):
         bullet_rect = self.bullet.get_rect(center=pos)
@@ -200,7 +201,9 @@ class Bullet:
 
 
 class Game:
-    '''Класс Game управляет логикой и ходом игры. При инициализации получает объект карты и объекты существ.'''
+    """
+    Класс Game управляет логикой и ходом игры. При инициализации получает объект карты и объекты существ.
+    """
 
     def __init__(self, map, hero, enemy):
         self.map = map
@@ -267,6 +270,7 @@ class Game:
 
     def change_map(self, map_object, map_filename, free_tiles, trigger_tiles, spawn_pos, group):
         bullets.clear()
+        self.enemy.kill()
         map_object.__init__(map_filename, free_tiles, trigger_tiles, spawn_pos, group)
         self.hero.set_pos(spawn_pos)
 
