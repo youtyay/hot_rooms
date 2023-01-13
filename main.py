@@ -238,6 +238,7 @@ class Game:
     def check_enemy_for_bullet(self, enemy):
         for bullet in bullets:
             if bullet.get_rect().colliderect(enemy.get_rect()):
+                bullets.remove(bullet)
                 return False
         return True
 
@@ -331,7 +332,7 @@ def main():
     screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
 
     map = Map(f'map{map_number}.tmx', [0, 2, 3], [2], (1, 1))
-    hero = Hero(map.spawn_pos, 'player1.png', 1000)
+    hero = Hero(map.spawn_pos, 'player1.png', 30)
 
     game = Game(map, hero)
 
@@ -355,7 +356,7 @@ def main():
         if hero.aiming:
             pygame.draw.line(screen, pygame.Color(0, 255, 0), hero.get_rect().center, pygame.mouse.get_pos(), 1)
         pygame.display.flip()
-        # print('FPS:', int(clock.get_fps()))
+        print('FPS:', int(clock.get_fps()))
 
 
 if __name__ == '__main__':

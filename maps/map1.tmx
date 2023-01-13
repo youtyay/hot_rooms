@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="25" tileheight="25" infinite="0" nextlayerid="2" nextobjectid="1">
+<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="50" height="35" tilewidth="25" tileheight="25" infinite="0" nextlayerid="2" nextobjectid="1">
  <tileset firstgid="1" source="hot_rooms_prealfa.tsx"/>
- <layer id="1" name="Слой тайлов 1" width="32" height="32">
+ <layer id="1" name="Слой тайлов 1" width="50" height="35">
   <data encoding="base64" compression="zlib">
-   eJzNlcEOwCAIQ53z/795ly0xBgQKyA4cNLrCa816a60X1zXVuh7v3hDOrWtNafS13/7OrH1m6SPzUgwp/U6sqb1K/lzfu5k0+bP0jtyT5q/Wj8wfxxn1yspNOuPhH+HRSX0t/6hMUZ5Z/JeywPXtySV136oT8S482dpxRv6/nsxpOSD8I7O688bjM1WD0ULyhxaSt6j5o/zP1NcwQ95Zph9Z/E/rW+9m8kb+P+gMFH+pt7/4H5X/k/m7FfqZ/Gf9ynoAoGoFVw==
+   eJztlkEOhSAMRFF7/zP/1U+MsdCBaYHGxcQopvDagXKWUs4kOjZXBg4xcvTWNdIPVg5W7Z/vQoo/g0N7ZuSo+bSXo5UDawxt3RoHklPmPkM4WjlYmYMhL19Fc9TWgu7zNz+McCC+8uDwqKvFPywOto9mcjC1K8d9zshzt9Zve+577D6I3Hc9fbSzrzJxXEW/t3txoEJjRHDM0McxLknCsUI9tDvsSL8bqWfEuWvNydt3zzqh8dFcWce9Of7j0ojFVFQf1P6rnVkIP7o32b5qnRPsuoky9wwx+s4KHAwxfbUCRwb9AD2VCGg=
   </data>
  </layer>
 </map>
