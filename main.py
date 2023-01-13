@@ -3,6 +3,7 @@ import math
 import pytmx
 
 
+# Базовые константы
 WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 0, 0
 FPS = 30
 MAPS_DIR = 'maps'
@@ -12,13 +13,16 @@ MOVE_SPEED = 5
 ENEMY_EVENT_TYPE = 30
 ENEMY_DELAY = 200
 
+# Вспомогательные переменные для игры
 map_number = 1
 bullets = []
 enemies = []
 
+# Константы с цветами
 BLACK, WHITE, RED = (0, 0, 0), (255, 255, 255), (255, 0, 0)
 GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
 
+# Вспомогательные настройки
 hex = False
 person_hitbox_view = False
 
@@ -59,8 +63,8 @@ class Map:
     def set_spawn_pos(self, pos):
         self.spawn_pos = pos
 
-    def spawn_enemies(self):
-        for y in range(self.height):
+    def spawn_enemies(self):          # Спавнит врагов на тайлах спавна мобов. Все объекты создаются в списке enemies,
+        for y in range(self.height):  # там они рендерятся и обрабабатываются.
             for x in range(self.width):
                 if self.get_tile_id((x, y)) == 3:
                     enemies.append(Enemy((x, y), 'enemy_tex.png'))
@@ -68,8 +72,8 @@ class Map:
     def is_free(self, pos):  # Проверка на проходимость тайла
         return self.get_tile_id(pos) in self.free_tiles
 
-    def find_path_step(self, start, target):
-        INF = 1000
+    def find_path_step(self, start, target):  # Алгоритм поиска кратчайшего пути из тайла start в тайл target.
+        INF = 1000                            # Применяется для объектов врага
         x, y = start
         distance = [[INF] * self.width for _ in range(self.height)]
         distance[y][x] = 0
@@ -168,6 +172,9 @@ class Hero(Person):  # TODO: создать разнообразные пушк�
 
 
 class Bullet:
+    """
+    TODO: Сделать описание класса пули
+    """
     def __init__(self, x, y):
         self.pos = (x, y)
         mx, my = pygame.mouse.get_pos()
@@ -183,9 +190,13 @@ class Bullet:
         self.bullet.fill(YELLOW)
         self.bullet = pygame.transform.rotate(self.bullet, angle)
         self.speed = 20
+        self.rect = self.bullet.get_rect()
 
     def get_pos(self):
         return self.pos
+
+    def get_rect(self):
+        return pygame.Rect(self.pos[0], self.pos[1], self.bullet.get_width(), self.bullet.get_height())
 
     def update(self):
         self.pos = (self.pos[0] + self.dir[0] * self.speed,
@@ -213,7 +224,10 @@ class Game:
         self.map.render(screen)
         self.hero.render(screen)
         for enemy in enemies:
-            enemy.render(screen)
+            if self.check_enemy_for_bullet(enemy):
+                enemy.render(screen)
+            else:
+                enemies.remove(enemy)
         self.hero.update_bullets(screen)
         for bullet in bullets:
             if self.check_wall_for_bullet(bullet):
@@ -221,12 +235,18 @@ class Game:
             else:
                 bullets.remove(bullet)
 
-    def check_wall_for_bullet(self, bullet):
+    def check_enemy_for_bullet(self, enemy):
+        for bullet in bullets:
+            if bullet.get_rect().colliderect(enemy.get_rect()):
+                return False
+        return True
+
+    def check_wall_for_bullet(self, bullet):  # Проверка на стену для пули
         if self.map.get_tile_id(bullet.get_tile_pos(bullet.get_pos())) not in self.map.free_tiles:
             return False
         return True
 
-    def check_wall_for_player(self, next_pixel_x, next_pixel_y):
+    def check_wall_for_player(self, next_pixel_x, next_pixel_y):  # Проверка на стену для игрока
         tile = (round(next_pixel_x / TILE_SIZE), round(next_pixel_y / TILE_SIZE))
         player_hitbox_rect = self.hero.get_rect()
         for y in range(tile[1] - 1, tile[1] + 2):
@@ -263,7 +283,7 @@ class Game:
                 self.map.set_spawn_pos((9, 6))
                 self.change_map(self.map, f'map{map_number}.tmx', [0, 2, 3], [2, 3], self.map.spawn_pos)
 
-    def move_enemies(self):
+    def move_enemies(self):  # Функция для перемещения всех врагов по алгоритму find_path_step()
         for enemy in enemies:
             self.move_enemy(enemy)
 
@@ -335,7 +355,7 @@ def main():
         if hero.aiming:
             pygame.draw.line(screen, pygame.Color(0, 255, 0), hero.get_rect().center, pygame.mouse.get_pos(), 1)
         pygame.display.flip()
-        print('FPS:', int(clock.get_fps()))
+        # print('FPS:', int(clock.get_fps()))
 
 
 if __name__ == '__main__':
