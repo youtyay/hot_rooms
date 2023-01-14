@@ -4,7 +4,7 @@ import pytmx
 
 
 # Базовые константы
-WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 0, 0
+WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 1920, 1080
 FPS = 30
 MAPS_DIR = 'maps'
 SPRITES_DIR = 'sprites'
@@ -12,11 +12,13 @@ TILE_SIZE = 25
 MOVE_SPEED = 5
 ENEMY_EVENT_TYPE = 30
 ENEMY_DELAY = 200
+ENEMY_TRIGGER_SIZE = 25
 
 # Вспомогательные переменные для игры
 map_number = 1
 bullets = []
 enemies = []
+enemy_event = False
 
 # Константы с цветами
 BLACK, WHITE, RED = (0, 0, 0), (255, 255, 255), (255, 0, 0)
@@ -24,7 +26,8 @@ GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
 
 # Вспомогательные настройки
 hex = False
-person_hitbox_view = False
+person_hitbox_view = True
+enemy_trigger_size_view = True
 
 
 class Map:
@@ -132,14 +135,26 @@ class Person:
     def render(self, screen):  # Отрисовка существа на холсте
         screen.blit(self.person_texture.image, self.pixel_pos)
         if person_hitbox_view:  # Hitbox существа
-            pygame.draw.rect(screen, RED, self.hitbox, 1)
+            pygame.draw.rect(screen, GREEN, self.hitbox, 1)
 
 
-class Enemy(Person):  # TODO: дать врагам возможность убивать и умирать, а также пофиксить стак врагов в одном тайле
+class Enemy(Person):  # TODO: дать врагам возможность убивать, а также пофиксить стак врагов в одном тайле
 
     def __init__(self, pos, texture):
         super().__init__(pos, texture)
         self.pos = pos
+        self.triggering = False
+        self.trigger_rect = self.get_rect()
+        self.trigger_rect.height = self.trigger_rect.width = ENEMY_TRIGGER_SIZE * TILE_SIZE
+        self.trigger_rect.center = (self.pixel_pos[0] + TILE_SIZE // 2, self.pixel_pos[1] + TILE_SIZE // 2)
+
+    def render(self, screen):
+        super(Enemy, self).render(screen)
+        if enemy_trigger_size_view:
+            pygame.draw.rect(screen, RED, self.trigger_rect, 1)
+
+    def trigger_hero(self):
+        self.trigger_rect.center = (self.pixel_pos[0] + TILE_SIZE // 2, self.pixel_pos[1] + TILE_SIZE // 2)
 
 
 class Hero(Person):  # TODO: создать разнообразные пушки для игрока :)
@@ -152,6 +167,12 @@ class Hero(Person):  # TODO: создать разнообразные пушк�
         self.pos = pos
         self.ammo = ammo
         self.aiming = False
+        self.alive = True
+
+    def render(self, screen):
+        super(Hero, self).render(screen)
+        if self.aiming:
+            pygame.draw.line(screen, GREEN, self.get_rect().center, pygame.mouse.get_pos(), 1)
 
     def shoot(self):
         if self.ammo > 0:
@@ -211,6 +232,23 @@ class Bullet:
         return bullet_rect[0] // TILE_SIZE, bullet_rect[1] // TILE_SIZE
 
 
+class Camera:
+
+    def __init__(self, hero):
+        self.hero = hero
+        self.hero_rect = hero.get_rect()
+        self.size = WINDOW_SIZE
+        self.pixel_pos = hero.get_pixel_pos()
+        self.rect = pygame.rect.Rect(*self.pixel_pos, *self.size)
+        self.rect.center = (self.pixel_pos[0] + TILE_SIZE // 2, self.pixel_pos[1] + TILE_SIZE // 2)
+
+    def follow_hero(self):
+        self.rect.center = self.hero.get_rect().center
+
+    def draw_rect(self, screen):
+        pygame.draw.rect(screen, WHITE, self.rect, 5)
+
+
 class Game:
     """
     Класс Game управляет логикой и ходом игры. При инициализации получает объект карты и объекты существ.
@@ -221,13 +259,26 @@ class Game:
         self.hero = hero
 
     def render(self, screen):  # Синхронизированная отрисовка
+        global enemy_event
         self.map.render(screen)
         self.hero.render(screen)
+        hero_rect = self.hero.get_rect()
         for enemy in enemies:
+            if hero_rect.colliderect(enemy.trigger_rect):
+                enemy.triggering = True
+            else:
+                enemy.triggering = False
+            if enemy.get_rect().colliderect(hero_rect):
+                self.hero.alive = False
             if self.check_enemy_for_bullet(enemy):
+                if enemy.triggering and enemy_event:
+                    self.move_enemy(enemy)
+                    enemy.trigger_hero()
                 enemy.render(screen)
             else:
+                print(f'{enemy} killed')
                 enemies.remove(enemy)
+        enemy_event = False
         self.hero.update_bullets(screen)
         for bullet in bullets:
             if self.check_wall_for_bullet(bullet):
@@ -284,10 +335,6 @@ class Game:
                 self.map.set_spawn_pos((9, 6))
                 self.change_map(self.map, f'map{map_number}.tmx', [0, 2, 3], [2, 3], self.map.spawn_pos)
 
-    def move_enemies(self):  # Функция для перемещения всех врагов по алгоритму find_path_step()
-        for enemy in enemies:
-            self.move_enemy(enemy)
-
     def move_enemy(self, enemy):
         enemy_pos = enemy.get_pos()
         enemy_pixel_pos = list(enemy.get_pixel_pos())
@@ -316,15 +363,13 @@ class Game:
     def change_map(self, map_object, map_filename, free_tiles, trigger_tiles, spawn_pos):
         bullets.clear()
         enemies.clear()
-        print(f'''
-            ########################
-            # map{map_number - 1} changed to map{map_number} #
-            ########################''')
+        print(f'{map_number - 1} changed to map{map_number}')
         map_object.__init__(map_filename, free_tiles, trigger_tiles, spawn_pos)
         self.hero.set_pos(spawn_pos)
 
 
 def main():
+    global enemy_event
     pygame.init()
     clock = pygame.time.Clock()
     pygame.time.set_timer(ENEMY_EVENT_TYPE, ENEMY_DELAY)
@@ -334,13 +379,15 @@ def main():
     map = Map(f'map{map_number}.tmx', [0, 2, 3], [2], (1, 1))
     hero = Hero(map.spawn_pos, 'player1.png', 30)
 
+    camera = Camera(hero)
     game = Game(map, hero)
 
     running = True
+    count = 0
     while running:
         clock.tick(FPS)
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT or not hero.alive:
                 running = False
                 break
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -349,14 +396,16 @@ def main():
                 if event.button == 3:
                     hero.aim()
             if event.type == ENEMY_EVENT_TYPE:
-                game.move_enemies()
+                enemy_event = True
         game.update_hero()
         screen.fill((0, 0, 0))
         game.render(screen)
-        if hero.aiming:
-            pygame.draw.line(screen, pygame.Color(0, 255, 0), hero.get_rect().center, pygame.mouse.get_pos(), 1)
+        camera.follow_hero()
+        camera.draw_rect(screen)
         pygame.display.flip()
-        print('FPS:', int(clock.get_fps()))
+        count += 1
+        if count % FPS == 0:
+            print('FPS:', int(clock.get_fps()), '   second =', count // FPS)
 
 
 if __name__ == '__main__':
