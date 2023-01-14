@@ -26,8 +26,8 @@ GREEN, BLUE, YELLOW = (0, 255, 0), (0, 0, 255), (255, 255, 0)
 
 # Вспомогательные настройки
 hex = False
-person_hitbox_view = True
-enemy_trigger_size_view = True
+person_hitbox_view = False
+enemy_trigger_size_view = False
 
 
 class Map:
@@ -344,7 +344,7 @@ class Game:
             triggger_id = self.map.get_tile_id(self.hero.get_pos())
             if triggger_id == 2:  # Смена карты
                 map_number += 1
-                self.map.set_spawn_pos((9, 6))
+                self.map.set_spawn_pos((1, 1))
                 self.change_map(self.map, f'map{map_number}.tmx', [0, 2, 3], [2, 3], self.map.spawn_pos)
 
     def move_enemy(self, enemy):  # TODO: Пофиксить кривое перермещение врагов по тайлам (сделать плавное пиксельное)
@@ -388,11 +388,11 @@ def main():
     pygame.display.set_caption('Hot Rooms')
     screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
 
-    map = Map(f'map_test_cam.tmx', [0, 2, 3], [2], (25, 18))
-    # map = Map(f'map{map_number}.tmx', [0, 2, 3], [2], (1, 1))
-    hero = Hero(map.spawn_pos, 'player1.png', 30)
+    # map = Map(f'map_test_cam.tmx', [0, 2, 3], [2], (25, 18))
+    map = Map(f'map{map_number}.tmx', [0, 2, 3], [2], (1, 1))
+    hero = Hero(map.spawn_pos, 'player1.png', 200)
 
-    camera = Camera(hero, screen)
+    # camera = Camera(hero, screen)
     game = Game(map, hero)
 
     running = True
@@ -413,13 +413,16 @@ def main():
         game.update_hero()
         screen.fill((0, 0, 0))
         game.render(screen)
-        camera.follow_hero()
-        camera.update()
-        camera.draw_rect(screen)
+        # camera.follow_hero()
+        # camera.update()
+        # camera.draw_rect(screen)
         pygame.display.flip()
         count += 1
         if count % FPS == 0:
-            time = f'{(count // FPS) // 60}:{count // FPS}'
+            if count // FPS % 60 < 10:
+                time = f'{count // FPS // 60}:0{count // FPS % 60}'
+            else:
+                time = f'{count // FPS // 60}:{count // FPS % 60}'
             print('FPS:', int(clock.get_fps()), '   time:', time)
 
 
