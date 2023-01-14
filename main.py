@@ -138,7 +138,7 @@ class Person:
             pygame.draw.rect(screen, GREEN, self.hitbox, 1)
 
 
-class Enemy(Person):  # TODO: дать врагам возможность убивать, а также пофиксить стак врагов в одном тайле
+class Enemy(Person):  # TODO: пофиксить стак врагов в одном тайле
 
     def __init__(self, pos, texture):
         super().__init__(pos, texture)
@@ -179,6 +179,7 @@ class Hero(Person):  # TODO: создать разнообразные пушк�
             self.ammo -= 1
             pos = self.get_pixel_pos()
             bullets.append(Bullet(pos[0] + TILE_SIZE // 2, pos[1] + TILE_SIZE // 2))
+            print('Ammo:', self.ammo)
         elif self.ammo == 0:
             print('No ammo')  # TODO: Сделать что-то с патронами
 
@@ -234,13 +235,23 @@ class Bullet:
 
 class Camera:
 
-    def __init__(self, hero):
+    def __init__(self, hero, screen):
         self.hero = hero
         self.hero_rect = hero.get_rect()
-        self.size = WINDOW_SIZE
+        self.size = (WINDOW_WIDTH // 1.25, WINDOW_HEIGHT // 1.25)
         self.pixel_pos = hero.get_pixel_pos()
         self.rect = pygame.rect.Rect(*self.pixel_pos, *self.size)
         self.rect.center = (self.pixel_pos[0] + TILE_SIZE // 2, self.pixel_pos[1] + TILE_SIZE // 2)
+        self.screen = screen
+        self.screen_rect = screen.get_rect()
+
+    def update(self):
+        pass
+        # self.screen_rect.x = self.screen_rect.x - self.rect.x
+        # self.screen_rect.y = self.screen_rect.y - self.rect.y
+
+    def get_rect(self):
+        return self.rect
 
     def follow_hero(self):
         self.rect.center = self.hero.get_rect().center
@@ -317,15 +328,16 @@ class Game:
         return next_pixel_x, next_pixel_y
 
     def update_hero(self):  # Передвижение Игрока
-        global map_number
+        global map_number, cam_x, cam_y
         next_pixel_x, next_pixel_y = self.hero.get_pixel_pos()
-        if pygame.key.get_pressed()[pygame.K_a] or pygame.key.get_pressed()[pygame.K_LEFT]:
+        key = pygame.key.get_pressed()
+        if key[pygame.K_a] or key[pygame.K_LEFT]:
             next_pixel_x -= MOVE_SPEED
-        if pygame.key.get_pressed()[pygame.K_d] or pygame.key.get_pressed()[pygame.K_RIGHT]:
+        if key[pygame.K_d] or key[pygame.K_RIGHT]:
             next_pixel_x += MOVE_SPEED
-        if pygame.key.get_pressed()[pygame.K_w] or pygame.key.get_pressed()[pygame.K_UP]:
+        if key[pygame.K_w] or key[pygame.K_UP]:
             next_pixel_y -= MOVE_SPEED
-        if pygame.key.get_pressed()[pygame.K_s] or pygame.key.get_pressed()[pygame.K_DOWN]:
+        if key[pygame.K_s] or key[pygame.K_DOWN]:
             next_pixel_y += MOVE_SPEED
         self.hero.set_pixel_pos(self.check_wall_for_player(next_pixel_x, next_pixel_y))
         if self.map.get_tile_id(self.hero.get_pos()) in self.map.trigger_tiles:  # Если игрок активировал триггер карты
@@ -335,7 +347,7 @@ class Game:
                 self.map.set_spawn_pos((9, 6))
                 self.change_map(self.map, f'map{map_number}.tmx', [0, 2, 3], [2, 3], self.map.spawn_pos)
 
-    def move_enemy(self, enemy):
+    def move_enemy(self, enemy):  # TODO: Пофиксить кривое перермещение врагов по тайлам (сделать плавное пиксельное)
         enemy_pos = enemy.get_pos()
         enemy_pixel_pos = list(enemy.get_pixel_pos())
         next_pos = self.map.find_path_step(enemy_pos, self.hero.get_pos())
@@ -363,7 +375,7 @@ class Game:
     def change_map(self, map_object, map_filename, free_tiles, trigger_tiles, spawn_pos):
         bullets.clear()
         enemies.clear()
-        print(f'{map_number - 1} changed to map{map_number}')
+        print(f'map{map_number - 1} changed to map{map_number}')
         map_object.__init__(map_filename, free_tiles, trigger_tiles, spawn_pos)
         self.hero.set_pos(spawn_pos)
 
@@ -376,10 +388,11 @@ def main():
     pygame.display.set_caption('Hot Rooms')
     screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
 
-    map = Map(f'map{map_number}.tmx', [0, 2, 3], [2], (1, 1))
+    map = Map(f'map_test_cam.tmx', [0, 2, 3], [2], (25, 18))
+    # map = Map(f'map{map_number}.tmx', [0, 2, 3], [2], (1, 1))
     hero = Hero(map.spawn_pos, 'player1.png', 30)
 
-    camera = Camera(hero)
+    camera = Camera(hero, screen)
     game = Game(map, hero)
 
     running = True
@@ -401,11 +414,13 @@ def main():
         screen.fill((0, 0, 0))
         game.render(screen)
         camera.follow_hero()
+        camera.update()
         camera.draw_rect(screen)
         pygame.display.flip()
         count += 1
         if count % FPS == 0:
-            print('FPS:', int(clock.get_fps()), '   second =', count // FPS)
+            time = f'{(count // FPS) // 60}:{count // FPS}'
+            print('FPS:', int(clock.get_fps()), '   time:', time)
 
 
 if __name__ == '__main__':

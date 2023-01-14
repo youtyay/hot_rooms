@@ -3,7 +3,7 @@
  <tileset firstgid="1" source="hot_rooms_prealfa.tsx"/>
  <layer id="1" name="Слой тайлов 1" width="100" height="100">
   <data encoding="base64" compression="zlib">
-   eJzt2zGOgzAUQEE2yv3PvO12gcQL74cpXhmwGQcJIx7btj2U6keJeLTi0YpHKx6teLTi0YpHKx6t9ni8enb0vHm+x6fnuHqeUyp6PCPX5Mj/fdW9oehxdSvHy4MHj3M97haPVnWPu3l9u8c0Tx6teHxvPGb3zn7iij1Ive8hHldfk6uOxYNHPR6teLTi0YpHKx6tjr4/P/qunceceLTi0YpHKx6teLTi0YpHKx6teLTi0YpHKx6teLTi0YpHKx6teLTi0YpHKx6teLTi0YpHKx6teLTi0YpHKx6teLTi0YpHqzt57PlmZuW3NTxez/XK3/+Hx4Q1djeP+pwmj/3sNcuDBw8eUzwmx6MVj1ZFjwn3YB6tOU0eO4/W2Fful/w9lv2Sczwmt2ctXb33diePCfFoxaMVj1Y8WvFoxaMVj1Y8WvFoxaMVj1Y8WvFoxaMVj1Y8WvHo9OSRa8U7Za3tF3H9KW0=
+   eJzt20GOgjAAQFHGeP8zu53NRHEq/bVv8ZdCy6sklHA7juOmVD9KxKMVj1Y8WvFoxaMVj1Y8WvFo9YrHs2dHz5vXe/z3HLPnuUo8/r4mZ/7vo+4NPD473p087jymz++K6h67xaNV3WM3r2/3WM2TRyse3xuPtXtnP3HEHqTe9xCP2ddk1rF48KjHoxWPVjxa8WjFo9XZ9+dn37XzWCcerXi04tGKRyserXi04tGKRyserXi04tGKRyserXi04tGKRyserXi04tGKRyserXi04tGKRyserXi04tGKRyserXi04tFqJ49XvpkZ+W0Nj+dznfn7T3issMZ286jPaeWxX71mefDgwWMVj5Xj0YpHq6LHCvdgHq05rTx2Hq2xj9wv+X0s+yXXeKzcK2tp9t7bTh4rxKMVj1Y8WvFoxaMVj1Y8WvFoxaMVj1Y8WvFoxaMVj1Y8WvFoxaPTnUeuEe+UNbYHaCUpbQ==
   </data>
  </layer>
 </map>
