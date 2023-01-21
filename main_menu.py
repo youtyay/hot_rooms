@@ -1,35 +1,39 @@
-def menu():
-    import pygame
-    import pygame_menu
-    from pygame_menu import themes
+import os
+import sys
 
+import pygame
+import pygame_menu
+from pygame_menu import themes
+import constants
+
+
+def menu():
     pygame.init()
     surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
     def set_difficulty(value, difficulty):
-        print(value)
-        print(difficulty)
-
+        constants.difficulty = value[0][0]
+        print(constants.difficulty)
+        # print(value)
+        # print(difficulty)
 
     def start_the_game():
-        # exec(open('game.py', encoding="utf8").read())
-        import os
-        os.system("start cmd /k python game.py")
-        # mainmenu._open(loading)
-        # pygame.time.set_timer(update_loading, 30)
-
+        for value in mainmenu.get_input_data().values():
+            constants.username = value
+        os.system("start cmd /k python main.py")
+        os.system("taskkill /F /IM cmd.exe")
+        sys.exit()
 
     def level_menu():
         mainmenu._open(level)
 
-
-    mainmenu = pygame_menu.Menu('Welcome', 1536, 864, theme=themes.THEME_SOLARIZED)
-    mainmenu.add.text_input('Name: ', default='username')
+    mainmenu = pygame_menu.Menu('Welcome', 1536, 864, theme=themes.THEME_DARK)
+    mainmenu.add.text_input('Name: ', default=constants.username)
     mainmenu.add.button('Play', start_the_game)
     mainmenu.add.button('Levels', level_menu)
     mainmenu.add.button('Quit', pygame_menu.events.EXIT)
 
-    level = pygame_menu.Menu('Select a Difficulty', 1536, 864, theme=themes.THEME_BLUE)
+    level = pygame_menu.Menu('Select a Difficulty', 1536, 864, theme=themes.THEME_DARK)
     level.add.selector('Difficulty :', [('Hard', 1), ('Easy', 2)], onchange=set_difficulty)
 
     loading = pygame_menu.Menu('Loading the Game...', 1536, 864, theme=themes.THEME_DARK)
@@ -57,5 +61,6 @@ def menu():
                 arrow.draw(surface, mainmenu.get_current().get_selected_widget())
 
         pygame.display.update()
+
 
 menu()
