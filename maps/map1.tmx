@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="50" height="35" tilewidth="25" tileheight="25" infinite="0" nextlayerid="2" nextobjectid="1">
- <tileset firstgid="1" source="hot_rooms_prealfa.tsx"/>
+ <tileset firstgid="1" source="textures_hot_rooms.tsx"/>
  <layer id="1" name="Слой тайлов 1" width="50" height="35">
   <data encoding="base64" compression="zlib">
-   eJztljsSwCAIRI16/zOnSeWM4asgUmyTrE7esBBqKaUG0QMI66Oel95LvedUjvH5rRzdCcfMN+Pjfk9yyDi030fh0BK2n5PDJle3cEDzijrPvM5d7xyrFI2DWlfIH40D4hv3QKyw+6NWrqzrlBw2HLtzxf1/QL7dfX4qB7f+VjlNjv/8JYeMg9u/3nLlnaN9kuZq1Gy/Oo3Dm7TnbhQO6z5f6esbOSLoBS+ACMg=
+   eJy1Wdty6jAMdMutQKcpFP7/VxtmstPtjiRLDjxoOE0UW5eVtPbZtdb2i1yMf+P3MMtOnl/o+V6+VdF3uh7/rXtb9ulan7O8JeTL0fWeWzItv++z3Gc5yzo/s2yTa7Eci36cV67Baz1if6Vn3xTXqbje0bGtouv5V8mF5uS2yJa+2cizERsQr6vxvBIL+KC54D2A/QP5hG8uzncVbFfxVvXB8onrPfqmko9oDcaCYmLEh6pUMWFh89j+90uI1nAvpiOCurlTLDeG3OjdQ3dt383Y5dVyhFOeYTrf9oa8qsY4t6eWwwhwcG01XHni9bEsLi0/MnGB7ZP4MRX2G8GLh8sRP3gGfTQbE5n4or42CZ8rvepr8aPHT5QPjHAK2HVqMZZRs9WZcUj4ovHX+dHjNRxb9ALLPtbzdHo5ifCl8ffywXyG+28mtmtnnubE6sMaf69noqdp3+VZ5uUOHKmnF80K9sXCGPzA2l4+RuqmKtz/e3lRjGkvOi6+Zmf3syTi7p4vkT3oX9Y8v9Kez54nFb6Fuo987nGKbNxeKZmZEvESzPuRvlOZk1k/Ijs8P5gPV3i99udncPUsrvR9NMOiWgHmub6q9wVWbMAdovsHKx/WXQbrj97NaN4yuOPZHuXDmhMRT0Qf9OZsFifAXG+tTG1ArzInJolRNTfM36f2N/u9+0COW5S7kXMU713xJeJdPQzoPZDuZ/nBfSeyD2ee7PlNeVdVuI/oGtqv9GwRxRp26exXnvxsLuDlWfkv81zkMmsL56hSQ717T0sX+tyXLZyiDrO+aC5ZMtwnMzdVl//PoYftLKfjPoZemekFFe7Dtkyy9xp+Phl78HmXcebxH2B7zezn84feI3q/N0PPun9k7PIZlfXv9E7XiO44rfPSL0JgIwc=
   </data>
  </layer>
 </map>

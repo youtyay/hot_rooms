@@ -3,7 +3,7 @@
  <tileset firstgid="1" source="textures_hot_rooms.tsx"/>
  <layer id="1" name="Слой тайлов 1" width="50" height="35">
   <data encoding="base64" compression="zlib">
-   eJzt0UEKwCAQBMGVICZ4EvH/X83mF72kD3WfZnpErOJGmqkV99iB8seOG7DXP2qwg8UOFjtY7GCxg8UOFjtY7GCxg8UOFjtY7GCxg+Xr2Okq7qQXSGwMwA==
+   eJzt0bERwCAQxMAnMDjwkAD9t+p3F/qxgs1Pc1dE9OJGelIrbtqB8ueOG7DbP9jsYLGDxQ4WO1jsYLGDxQ4WO1jsYLGDxQ4WO1jsYPk6VtrFnfQCUWwOpg==
   </data>
  </layer>
 </map>

@@ -69,7 +69,7 @@ class Map:
     def spawn_enemies(self):          # Спавнит врагов на тайлах спавна мобов. Все объекты создаются в списке enemies,
         for y in range(self.height):  # там они рендерятся и обрабабатываются.
             for x in range(self.width):
-                if self.get_tile_id((x, y)) == 3:
+                if self.get_tile_id((x, y)) == 14:
                     enemies.append(Enemy((x, y), 'enemy_tex.png'))
 
     def is_free(self, pos):  # Проверка на проходимость тайла
@@ -233,33 +233,6 @@ class Bullet:
         return bullet_rect[0] // TILE_SIZE, bullet_rect[1] // TILE_SIZE
 
 
-class Camera:
-
-    def __init__(self, hero, screen):
-        self.hero = hero
-        self.hero_rect = hero.get_rect()
-        self.size = (WINDOW_WIDTH // 1.25, WINDOW_HEIGHT // 1.25)
-        self.pixel_pos = hero.get_pixel_pos()
-        self.rect = pygame.rect.Rect(*self.pixel_pos, *self.size)
-        self.rect.center = (self.pixel_pos[0] + TILE_SIZE // 2, self.pixel_pos[1] + TILE_SIZE // 2)
-        self.screen = screen
-        self.screen_rect = screen.get_rect()
-
-    def update(self):
-        pass
-        # self.screen_rect.x = self.screen_rect.x - self.rect.x
-        # self.screen_rect.y = self.screen_rect.y - self.rect.y
-
-    def get_rect(self):
-        return self.rect
-
-    def follow_hero(self):
-        self.rect.center = self.hero.get_rect().center
-
-    def draw_rect(self, screen):
-        pygame.draw.rect(screen, WHITE, self.rect, 5)
-
-
 class Game:
     """
     Класс Game управляет логикой и ходом игры. При инициализации получает объект карты и объекты существ.
@@ -342,10 +315,10 @@ class Game:
         self.hero.set_pixel_pos(self.check_wall_for_player(next_pixel_x, next_pixel_y))
         if self.map.get_tile_id(self.hero.get_pos()) in self.map.trigger_tiles:  # Если игрок активировал триггер карты
             triggger_id = self.map.get_tile_id(self.hero.get_pos())
-            if triggger_id == 2:  # Смена карты
+            if triggger_id == 7:  # Смена карты
                 map_number += 1
                 self.map.set_spawn_pos((1, 1))
-                self.change_map(self.map, f'map{map_number}.tmx', [0, 2, 3], [2, 3], self.map.spawn_pos)
+                self.change_map(self.map, f'map{map_number}.tmx', [0, 7, 14, 12], [7, 12], self.map.spawn_pos)
 
     def move_enemy(self, enemy):  # TODO: Пофиксить кривое перермещение врагов по тайлам (сделать плавное пиксельное)
         enemy_pos = enemy.get_pos()
@@ -388,11 +361,9 @@ def main():
     pygame.display.set_caption('Hot Rooms')
     screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
 
-    # map = Map(f'map_test_cam.tmx', [0, 2, 3], [2], (25, 18))
-    map = Map(f'map{map_number}.tmx', [0, 2, 3], [2], (1, 1))
+    map = Map(f'map{map_number}.tmx', [0, 7, 14, 12], [7, 12], (1, 1))
     hero = Hero(map.spawn_pos, 'player1.png', 200)
 
-    # camera = Camera(hero, screen)
     game = Game(map, hero)
 
     running = True
@@ -413,9 +384,6 @@ def main():
         game.update_hero()
         screen.fill((0, 0, 0))
         game.render(screen)
-        # camera.follow_hero()
-        # camera.update()
-        # camera.draw_rect(screen)
         pygame.display.flip()
         count += 1
         if count % FPS == 0:
