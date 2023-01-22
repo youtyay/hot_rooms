@@ -3,7 +3,7 @@
  <tileset firstgid="1" source="textures_hot_rooms.tsx"/>
  <layer id="1" name="Слой тайлов 1" width="50" height="35">
   <data encoding="base64" compression="zlib">
-   eJzt0bERwCAQxMAnMDjwkAD9t+p3F/qxgs1Pc1dE9OJGelIrbtqB8ueOG7DbP9jsYLGDxQ4WO1jsYLGDxQ4WO1jsYLGDxQ4WO1jsYPk6VtrFnfQCUWwOpg==
+   eJzdWO1ugzAMDN3aaaMbhW3l/d90ROJUz4JgJxeG9uNEpYrY5/NXOIcQPg+AlwnthHPmu9cJzQHwNnP4ynz3CDxOE8YJ7873bk4e/WzracJ9fkY8H0ALKw/4P4ZH7l7mZ65dhhZeHkN41JPH75NRr1ItPHmVg84QY4YWNXhEv1A/o+HsjqBFDR7Ika08RN+wcN2bhzdHWFpYeFhrFRw8flnqx8PjO+Gr1VZOz+k2Yujl0Sa4pGz1SgtvbLuNGHp5xDiu7VmWmOXm+TDbjVxKdwPUx1psZP30C++X9pzI5ULgAz8RG50bnThfQs4IRs/BziD5wIZ1J7iK35oH4iV3Kg1G31yzdzGeDx594PaPvaH1+A88mHMpAvs+647yV3qgd9TWWPdMth44kzXrUhxaxYNts7YmmMGw0QfufG3C792crXOjztY1oedrKRfGnXXJfz2D12pbanMv4MOeSfJ+IGdkqkcxtBkIWiD+S3sQdj7r9xJWnnn9lr6n9hTrzGDlmQXyjm/9TuaZfcgz6+6WinEqDjm5uMdOpWuzRo7W5rH0/aHGbJQ8XnfgIPsLU5MaeizNKfz3oTRhf/fR99YSYG9rN84eibbjWT81wxrZ
   </data>
  </layer>
 </map>

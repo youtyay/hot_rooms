@@ -1,34 +1,38 @@
 import os
-import sys
 
 import pygame
 import pygame_menu
 from pygame_menu import themes
-import constants
+from configparser import ConfigParser
 
 
 def menu():
     pygame.init()
     surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
+    config = ConfigParser()
+    config.read('config.ini')
+
     def set_difficulty(value, difficulty):
-        constants.difficulty = value[0][0]
-        print(constants.difficulty)
+        config['CONFIG']['difficulty'] = value[0][0]
+        print(value[0][0])
         # print(value)
         # print(difficulty)
 
     def start_the_game():
         for value in mainmenu.get_input_data().values():
-            constants.username = value
+            config['CONFIG']['username'] = value
         os.system("start cmd /k python main.py")
         os.system("taskkill /F /IM cmd.exe")
-        sys.exit()
+        with open('config.ini', mode='w') as configfile:
+            config.write(configfile)
+        exit()
 
     def level_menu():
         mainmenu._open(level)
 
     mainmenu = pygame_menu.Menu('Welcome', 1536, 864, theme=themes.THEME_DARK)
-    mainmenu.add.text_input('Name: ', default=constants.username)
+    mainmenu.add.text_input('Name: ', default=config['CONFIG']['username'])
     mainmenu.add.button('Play', start_the_game)
     mainmenu.add.button('Levels', level_menu)
     mainmenu.add.button('Quit', pygame_menu.events.EXIT)

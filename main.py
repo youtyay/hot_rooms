@@ -1,23 +1,37 @@
 import pygame
 import math
 import pytmx
+import configparser
+from random import choice
 
 from constants import *
 
 
 # Вспомогательные переменные для игры
 map_number = 1
+weapons = []
 bullets = []
 enemies = []
+enemy_hp = ENEMY_HP
 enemy_event = False
 win = False
 lose = False
-
+pistol_image = pygame.image.load('sprites/pistol_clear.png')
+shotgun_image = pygame.image.load('sprites/shotgun_clear.png')
+one_image = pygame.image.load('sprites/1.png')
+two_image = pygame.image.load('sprites/2.png')
 
 # Вспомогательные настройки
 hex = False
 person_hitbox_view = False
 enemy_trigger_size_view = False
+
+# Конфигурация пользователя
+config = configparser.ConfigParser()
+config.read('config.ini')
+username = config['CONFIG']['username']
+difficulty = config['CONFIG']['difficulty']
+kills = 0
 
 
 class Map:
@@ -29,9 +43,9 @@ class Map:
     Так-же в инициализатор передается список ID тайлов, по которым можно ходить и тайлы-триггеры.
     """
 
-    def __init__(self, map_filename, free_tiles, trigger_tiles, spawn_pos):
+    def __init__(self, map_filename, free_tiles, trigger_tiles):
         self.map = pytmx.load_pygame(f'{MAPS_DIR}/{map_filename}')
-        self.spawn_pos = spawn_pos
+        self.spawn_pos = (0, 0)
         self.height = self.map.height
         self.width = self.map.width
         self.free_tiles = free_tiles
@@ -48,19 +62,27 @@ class Map:
                     pygame.draw.rect(screen, WHITE, rect, 1)
 
     def get_tile_id(self, pos):  # Возвращает ID тайла по координатам (x, y). Помогает понять его тип
-        return self.map.tiledgidmap[self.map.get_tile_gid(*pos, 0)] - 1
+        pos_list = list(pos)
+        if pos[0] < 0:
+            pos_list[0] = 0
+        elif pos[0] > 49:
+            pos_list[0] = 49
+        if pos[1] > 34:
+            pos_list[1] = 34
+        elif pos[1] < 0:
+            pos_list[1] = 0
+        return self.map.tiledgidmap[self.map.get_tile_gid(*pos_list, 0)] - 1
 
     def get_tile_coords(self, pos):  # Возвращает пиксельные координаты тайла
         return pos[0] * TILE_SIZE, pos[1] * TILE_SIZE
 
-    def set_spawn_pos(self, pos):
-        self.spawn_pos = pos
-
     def spawn_enemies(self):          # Спавнит врагов на тайлах спавна мобов. Все объекты создаются в списке enemies,
-        for y in range(self.height):  # там они рендерятся и обрабабатываются.
+        for y in range(self.height):  # там они рендерятся и обновляются.
             for x in range(self.width):
-                if self.get_tile_id((x, y)) == 14:
-                    enemies.append(Enemy((x, y), 'enemy_tex.png', ENEMY_HP))
+                if self.get_tile_id((x, y)) == 16:
+                    enemies.append(Enemy((x, y), 'enemy_cultist.png', enemy_hp))
+                elif self.get_tile_id((x, y)) == 15:
+                    self.spawn_pos = (x, y)
 
     def is_free(self, pos):  # Проверка на проходимость тайла
         return self.get_tile_id(pos) in self.free_tiles
@@ -145,6 +167,10 @@ class Enemy(Person):  # TODO: пофиксить стак врагов в одн
             rect = pygame.Rect(self.pixel_pos[0], self.pixel_pos[1] - 6, self.hp, 5)
             pygame.draw.rect(screen, RED, pygame.Rect(self.pixel_pos[0], self.pixel_pos[1] - 6, ENEMY_HP, 5))
             pygame.draw.rect(screen, GREEN, rect)
+        elif difficulty == 'Hard':
+            rect = pygame.Rect(self.pixel_pos[0], self.pixel_pos[1] - 6, self.hp // 2, 5)
+            pygame.draw.rect(screen, RED, pygame.Rect(self.pixel_pos[0], self.pixel_pos[1] - 6, ENEMY_HP, 5))
+            pygame.draw.rect(screen, GREEN, rect)
         if enemy_trigger_size_view:
             pygame.draw.rect(screen, RED, self.trigger_rect, 1)
 
@@ -159,26 +185,44 @@ class Hero(Person):  # TODO: создать разнообразные пушк�
 
     def __init__(self, pos, texture, hp, ammo):
         super().__init__(pos, texture, hp)
+        self.person_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}').convert_alpha()
         self.pos = pos
         self.ammo = ammo
+        self.weapon = None
         self.aiming = False
         self.alive = True
+        self.image = self.person_texture.image
 
     def render(self, screen):
-        super(Hero, self).render(screen)
+        screen.blit(self.image, self.pixel_pos)
         font = pygame.font.Font(None, 13)
         text = font.render(username, True, WHITE)
         screen.blit(text, (self.pixel_pos[0], self.pixel_pos[1] - 8))
+        if person_hitbox_view:
+            pygame.draw.rect(screen, GREEN, self.hitbox, 1)
         if self.aiming:
             pygame.draw.line(screen, GREEN, self.get_rect().center, pygame.mouse.get_pos(), 1)
 
+    def rotate(self):
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        rel_x, rel_y = mouse_x - self.pixel_pos[0], mouse_y - self.pixel_pos[1]
+        angle = math.degrees(math.atan2(-rel_x, -rel_y))
+        self.image = pygame.transform.rotate(self.person_texture.image, int(angle))
+        self.person_texture.rect = self.image.get_rect(center=self.pixel_pos)
+
     def shoot(self):
+        pos = self.get_pixel_pos()
         if self.ammo > 0:
-            self.ammo -= 1
-            pos = self.get_pixel_pos()
-            bullets.append(Bullet(pos[0] + TILE_SIZE // 2, pos[1] + TILE_SIZE // 2))
+            if self.weapon == 'pistol':
+                bullets.append(Bullet(pos[0] + TILE_SIZE // 2, pos[1] + TILE_SIZE // 2))
+                self.ammo -= 1
+            elif self.weapon == 'shotgun':
+                bullets.append(Bullet(pos[0] + TILE_SIZE // 2, pos[1] + TILE_SIZE // 2, deviation=50))
+                bullets.append(Bullet(pos[0] + TILE_SIZE // 2, pos[1] + TILE_SIZE // 2))
+                bullets.append(Bullet(pos[0] + TILE_SIZE // 2, pos[1] + TILE_SIZE // 2, deviation=-50))
+                self.ammo -= 3
             print('Ammo:', self.ammo)
-        elif self.ammo == 0:
+        else:
             print('No ammo')  # TODO: Сделать что-то с патронами
 
     def aim(self):
@@ -195,10 +239,17 @@ class Bullet:
     """
     TODO: Сделать описание класса пули
     """
-    def __init__(self, x, y):
+    def __init__(self, x, y, deviation=None):
         self.pos = (x, y)
+        self.deviation = deviation
         mx, my = pygame.mouse.get_pos()
-        self.dir = (mx - x, my - y)
+        if self.deviation:
+            if mx > x and my > y or mx < x and my < y:
+                self.dir = (mx - x - self.deviation, my - y + self.deviation)
+            else:
+                self.dir = (mx - x + self.deviation, my - y + self.deviation)
+        else:
+            self.dir = (mx - x, my - y)
         length = math.hypot(*self.dir)
         if length == 0.0:
             self.dir = (0, -1)
@@ -209,7 +260,7 @@ class Bullet:
         self.bullet = pygame.Surface((10, 4)).convert_alpha()
         self.bullet.fill(YELLOW)
         self.bullet = pygame.transform.rotate(self.bullet, angle)
-        self.speed = 20
+        self.speed = BULLET_SPEED
         self.rect = self.bullet.get_rect()
 
     def get_pos(self):
@@ -259,7 +310,10 @@ class Game:
                     enemy.trigger_hero()
                 enemy.render(screen)
             else:
-                enemy.hp -= DAMAGE
+                if self.hero.weapon == 'pistol':
+                    enemy.hp -= PISTOL_DAMAGE
+                elif self.hero.weapon == 'shotgun':
+                    enemy.hp -= SHOTGUN_DAMAGE
                 print(f'{enemy} wounded   HP:{enemy.hp}')
                 if enemy.hp <= 0:
                     kills += 1
@@ -270,6 +324,13 @@ class Game:
         font = pygame.font.Font(None, 20)
         hero_ammo = font.render(f'Ammo: {self.hero.ammo}', True, (100, 255, 100))
         hero_kills = font.render(f'Kills: {kills}', True, (100, 255, 100))
+        if weapons:
+            if len(weapons) >= 1 and 'pistol' in weapons:
+                screen.blit(one_image, (1290, 500))
+                screen.blit(pistol_image, (1330, 500))
+            if len(weapons) >= 2 and 'shotgun' in weapons:
+                screen.blit(two_image, (1290, 600))
+                screen.blit(shotgun_image, (1330, 600))
         screen.blit(hero_ammo, (1330, 200))
         screen.blit(hero_kills, (1330, 300))
         for bullet in bullets:
@@ -308,10 +369,21 @@ class Game:
                             next_pixel_y -= MOVE_SPEED
         return next_pixel_x, next_pixel_y
 
-    def update_hero(self):  # Передвижение Игрока
+    def update_hero(self):  # Обработка Игрока
         global map_number, win
+
+        self.hero.rotate()
+
         next_pixel_x, next_pixel_y = self.hero.get_pixel_pos()
         key = pygame.key.get_pressed()
+
+        if key[pygame.K_1]:
+            if len(weapons) >= 1:
+                self.hero.weapon = weapons[0]
+        if key[pygame.K_2]:
+            if len(weapons) >= 2:
+                self.hero.weapon = weapons[1]
+
         if key[pygame.K_a] or key[pygame.K_LEFT]:
             next_pixel_x -= MOVE_SPEED
         if key[pygame.K_d] or key[pygame.K_RIGHT]:
@@ -320,15 +392,22 @@ class Game:
             next_pixel_y -= MOVE_SPEED
         if key[pygame.K_s] or key[pygame.K_DOWN]:
             next_pixel_y += MOVE_SPEED
+
         self.hero.set_pixel_pos(self.check_wall_for_player(next_pixel_x, next_pixel_y))
+
         if self.map.get_tile_id(self.hero.get_pos()) in self.map.trigger_tiles:  # Если игрок активировал триггер карты
             triggger_id = self.map.get_tile_id(self.hero.get_pos())
-            if triggger_id == 7:  # Смена карты
+            if triggger_id == 8:  # Смена карты
                 map_number += 1
-                self.map.set_spawn_pos((1, 1))
-                self.change_map(self.map, f'map{map_number}.tmx', [0, 7, 14, 12], [7, 12], self.map.spawn_pos)
-            if triggger_id == 12:
+                self.change_map(self.map, f'map{map_number}.tmx', [0, 8, 16, 13, 7, 15, 23], [7, 8, 13, 23])
+            if triggger_id == 13:
                 win = True
+            if triggger_id == 7:
+                if 'pistol' not in weapons:
+                    weapons.append('pistol')
+            if triggger_id == 23:
+                if 'shotgun' not in weapons:
+                    weapons.append('shotgun')
 
     def move_enemy(self, enemy):  # TODO: Пофиксить кривое перермещение врагов по тайлам (сделать плавное пиксельное)
         enemy_pos = enemy.get_pos()
@@ -355,52 +434,77 @@ class Game:
                 enemy_pixel_pos[1] -= dt
             enemy.set_pixel_pos(enemy_pixel_pos)
 
-    def change_map(self, map_object, map_filename, free_tiles, trigger_tiles, spawn_pos):
+    def change_map(self, map_object, map_filename, free_tiles, trigger_tiles):
         bullets.clear()
         enemies.clear()
         print(f'map{map_number - 1} changed to map{map_number}')
-        map_object.__init__(map_filename, free_tiles, trigger_tiles, spawn_pos)
-        self.hero.set_pos(spawn_pos)
+        map_object.__init__(map_filename, free_tiles, trigger_tiles)
+        self.hero.set_pos(map_object.spawn_pos)
 
 
 def main():
-    global enemy_event
+    global enemy_event, enemy_hp
+
+    pygame.mixer.pre_init(44100, -16, 1, 512)
     pygame.init()
     clock = pygame.time.Clock()
     pygame.time.set_timer(ENEMY_EVENT_TYPE, ENEMY_DELAY)
     pygame.display.set_caption('Hot Rooms')
     screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
 
-    font = pygame.font.Font(None, 100)
+    if difficulty == 'Hard':
+        enemy_hp *= 2
 
-    map = Map(f'map{map_number}.tmx', [0, 7, 14, 12], [7, 12], (1, 1))
-    hero = Hero(map.spawn_pos, 'player1.png', PLAYER_HP, 1000)
+    font = pygame.font.Font(None, 200)
+
+    map = Map(f'map{map_number}.tmx', [0, 8, 16, 13, 7, 15, 23], [7, 8, 13, 23])
+    hero = Hero(map.spawn_pos, 'hero.png', PLAYER_HP, 1000)
 
     game = Game(map, hero)
+
+    track = choice(PLAYLIST)
+    pygame.mixer.music.load(track)
+    print(f'Now playing: {track}')
+    PLAYLIST.remove(track)
+    track = choice(PLAYLIST)
+    pygame.mixer.music.queue(track)
+    PLAYLIST.remove(track)
+    pygame.mixer.music.set_endevent(pygame.USEREVENT)
+    pygame.mixer.music.play()
 
     running = True
     count = 0
     while running:
         clock.tick(FPS)
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:  # or not hero.alive
+            if event.type == pygame.QUIT:
                 running = False
                 break
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    hero.shoot()
+                    if weapons:
+                        hero.shoot()
                 if event.button == 3:
                     hero.aim()
+            if event.type == pygame.KEYDOWN:
+                if pygame.key.get_pressed()[pygame.K_ESCAPE]:
+                    exit('Game closed')
             if event.type == ENEMY_EVENT_TYPE:
                 enemy_event = True
+            if event.type == pygame.USEREVENT:
+                print(f'Now playing: {track}')
+                if len(PLAYLIST) > 0:
+                    track = choice(PLAYLIST)
+                    pygame.mixer.music.queue(track)
+                    PLAYLIST.remove(track)
         screen.fill((0, 0, 0))
         if win:
-            text = font.render(f'You Win!', True, (100, 255, 100))
+            text = font.render("Victory!", True, GREEN)
             text_x = WINDOW_WIDTH // 2.5 - text.get_width() // 2
             text_y = WINDOW_HEIGHT // 2.5 - text.get_height() // 2
             screen.blit(text, (text_x, text_y))
         elif lose:
-            text = font.render(f'You Lose!', True, (100, 255, 100))
+            text = font.render("Defeat", True, RED)
             text_x = WINDOW_WIDTH // 2.5 - text.get_width() // 2
             text_y = WINDOW_HEIGHT // 2.5 - text.get_height() // 2
             screen.blit(text, (text_x, text_y))
