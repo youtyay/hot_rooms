@@ -1,14 +1,16 @@
-import pygame
 import math
-import pytmx
 import configparser
 from random import choice
+
+import pygame
+import pytmx
 
 from constants import *
 
 
 # Вспомогательные переменные для игры
 map_number = 1
+kills = 0
 weapons = []
 bullets = []
 enemies = []
@@ -31,7 +33,6 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 username = config['CONFIG']['username']
 difficulty = config['CONFIG']['difficulty']
-kills = 0
 
 
 class Map:
@@ -45,7 +46,7 @@ class Map:
 
     def __init__(self, map_filename, free_tiles, trigger_tiles):
         self.map = pytmx.load_pygame(f'{MAPS_DIR}/{map_filename}')
-        self.spawn_pos = (0, 0)
+        self.spawn_pos = (1, 1)
         self.height = self.map.height
         self.width = self.map.width
         self.free_tiles = free_tiles
@@ -118,7 +119,6 @@ class Person:
     """
 
     def __init__(self, pos, texture, hp):
-        super().__init__()
         self.person_texture = pygame.sprite.Sprite()
         self.person_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}')
         self.person_texture.rect = self.person_texture.image.get_rect()
@@ -155,7 +155,6 @@ class Enemy(Person):  # TODO: пофиксить стак врагов в одн
 
     def __init__(self, pos, texture, hp):
         super().__init__(pos, texture, hp)
-        self.pos = pos
         self.triggering = False
         self.trigger_rect = self.get_rect()
         self.trigger_rect.height = self.trigger_rect.width = ENEMY_TRIGGER_SIZE * TILE_SIZE
@@ -163,14 +162,13 @@ class Enemy(Person):  # TODO: пофиксить стак врагов в одн
 
     def render(self, screen):
         super(Enemy, self).render(screen)
+        rect = pygame.Rect(self.pixel_pos[0], self.pixel_pos[1] - 6, self.hp, 5)
         if difficulty == 'Easy':
             rect = pygame.Rect(self.pixel_pos[0], self.pixel_pos[1] - 6, self.hp, 5)
-            pygame.draw.rect(screen, RED, pygame.Rect(self.pixel_pos[0], self.pixel_pos[1] - 6, ENEMY_HP, 5))
-            pygame.draw.rect(screen, GREEN, rect)
         elif difficulty == 'Hard':
             rect = pygame.Rect(self.pixel_pos[0], self.pixel_pos[1] - 6, self.hp // 2, 5)
-            pygame.draw.rect(screen, RED, pygame.Rect(self.pixel_pos[0], self.pixel_pos[1] - 6, ENEMY_HP, 5))
-            pygame.draw.rect(screen, GREEN, rect)
+        pygame.draw.rect(screen, RED, pygame.Rect(self.pixel_pos[0], self.pixel_pos[1] - 6, ENEMY_HP, 5))
+        pygame.draw.rect(screen, GREEN, rect)
         if enemy_trigger_size_view:
             pygame.draw.rect(screen, RED, self.trigger_rect, 1)
 
@@ -178,7 +176,7 @@ class Enemy(Person):  # TODO: пофиксить стак врагов в одн
         self.trigger_rect.center = (self.pixel_pos[0] + TILE_SIZE // 2, self.pixel_pos[1] + TILE_SIZE // 2)
 
 
-class Hero(Person):  # TODO: создать разнообразные пушки для игрока :)
+class Hero(Person):
     """
     Класс Игрока, наследуется от Person. Имеет допольнительный атрибут ammo - количество патрон / and smth more...
     """
@@ -186,7 +184,6 @@ class Hero(Person):  # TODO: создать разнообразные пушк�
     def __init__(self, pos, texture, hp, ammo):
         super().__init__(pos, texture, hp)
         self.person_texture.image = pygame.image.load(f'{SPRITES_DIR}/{texture}').convert_alpha()
-        self.pos = pos
         self.ammo = ammo
         self.weapon = None
         self.aiming = False
@@ -321,9 +318,9 @@ class Game:
                     print(f'{enemy} killed')
         enemy_event = False
         self.hero.update_bullets(screen)
-        font = pygame.font.Font(None, 20)
-        hero_ammo = font.render(f'Ammo: {self.hero.ammo}', True, (100, 255, 100))
-        hero_kills = font.render(f'Kills: {kills}', True, (100, 255, 100))
+        font = pygame.font.Font(None, 35)
+        hero_ammo = font.render(f'Ammo: {self.hero.ammo}', True, YELLOW)
+        hero_kills = font.render(f'Kills: {kills}', True, RED)
         if weapons:
             if len(weapons) >= 1 and 'pistol' in weapons:
                 screen.blit(one_image, (1290, 500))
@@ -376,6 +373,9 @@ class Game:
 
         next_pixel_x, next_pixel_y = self.hero.get_pixel_pos()
         key = pygame.key.get_pressed()
+
+        # if key[pygame.K_LCTRL]:
+        #     self.hero.shoot()
 
         if key[pygame.K_1]:
             if len(weapons) >= 1:
@@ -458,7 +458,7 @@ def main():
     font = pygame.font.Font(None, 200)
 
     map = Map(f'map{map_number}.tmx', [0, 8, 16, 13, 7, 15, 23], [7, 8, 13, 23])
-    hero = Hero(map.spawn_pos, 'hero.png', PLAYER_HP, 1000)
+    hero = Hero(map.spawn_pos, 'hero.png', PLAYER_HP, 1001)
 
     game = Game(map, hero)
 

@@ -34,7 +34,7 @@ def menu():
     mainmenu = pygame_menu.Menu('Welcome', 1536, 864, theme=themes.THEME_DARK)
     mainmenu.add.text_input('Name: ', default=config['CONFIG']['username'])
     mainmenu.add.button('Play', start_the_game)
-    mainmenu.add.button('Levels', level_menu)
+    mainmenu.add.button('Settings', level_menu)
     mainmenu.add.button('Quit', pygame_menu.events.EXIT)
 
     level = pygame_menu.Menu('Select a Difficulty', 1536, 864, theme=themes.THEME_DARK)
