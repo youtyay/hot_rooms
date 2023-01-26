@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="50" height="35" tilewidth="25" tileheight="25" infinite="0" nextlayerid="2" nextobjectid="1">
+ <tileset firstgid="1" source="textures_hot_rooms.tsx"/>
+ <layer id="1" name="Слой тайлов 1" width="50" height="35">
+  <data encoding="base64" compression="zlib">
+   eJzNWNFuwzAI9Nq11ZZuWdo0+f8/nSMFlZ3AARxXezhVVRLjAw6wTymle2NcMk6GdzrDe9q314y3xvjM+DK8s3AYg+u/gkef8ch4V54fMmYD11oew2rrmDGtv8fCvhC3jHPB18vzuzMWg5MH7X9Oz9w9B+xGwf2n+c3Cg3zl3ffBES/t+2n1X7fikeQ8aKmPRRPRfKe9dQpQa7U8yGekl4n9nyvX7gs8kEuEB+Ur18x5BfYJLQ8Hg50tHh3be4QH1R7SO+3VWztRP8jtlp69sZaHVavEwdPHLPqhGiPx4bYWHqX+ZNVqpBf3Gz7cis0V7Ev6t9iiPIj0Yvqm5EMtn4kP8jglfc6y+Kx3xAJ76iXpPWEr17g90oc2/3D9SDWG/GqZCainUX0bwcfIx1LTcJ+Uf5gbPVufg/eITvhO4sr3r/mY8yEbljhxf0uzNdZYbfbX8txbx9BeabaUeAzJVz/QtsbFo50aYDyicwTnQnNp7ZkiyqN2rkPNWrTz3+Ih8bGem7W6ZK1XWDNr4yFh6zxbC+LA+2ILm6Sblmcc3seH9Fernv5aypeWWudroyZQq7Vcau5ySvvns80o8MB84HU0Gvc9c0qbDUo1ao/YbJ0LPP7HGKAdy31JlEvkW75v6ews5ai1Z9TkmZcLacpzT+bpfZRn1tkN7ZTun9BOZP3W97uozb1q4St5SHN7i97IeXy8gMPA7O4ZkxbxkPoUPfuGmOzR53+YX/DcWgPpXll7by/by1q/30UgwA==
+  </data>
+ </layer>
+</map>
